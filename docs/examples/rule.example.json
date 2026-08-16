@@ -1,0 +1,40 @@
+{
+  "_comment": "TEMPLATE, NOT DATA. The conditions below are structural placeholders chosen to show the schema, not a trading recommendation and not anything a source said. This file lives in docs/ so `ictkb validate` does not load it. Copy into kb/rules/ and replace everything.",
+  "rule_id": "rul_example_placeholder",
+  "name": "Example rule - replace",
+  "phase": "setup",
+  "priority": 10,
+  "when": [
+    {
+      "fact": "htf_bias",
+      "op": "eq",
+      "value": "bullish",
+      "timeframe": "4h"
+    },
+    {
+      "fact": "session",
+      "op": "in",
+      "value": ["london", "new_york_am"]
+    },
+    {
+      "fact": "example.condition_present",
+      "op": "eq",
+      "value": true,
+      "timeframe": "15m"
+    }
+  ],
+  "then": {
+    "action": "arm_setup",
+    "params": {
+      "max_age_bars": 12
+    }
+  },
+  "unsourced_params": [
+    "max_age_bars"
+  ],
+  "derived_from": [
+    "clm_40e710d28bbb"
+  ],
+  "status": "draft",
+  "notes": "Every `fact` name above becomes a value the evaluation engine must compute from price data; keep them few and precisely defined. `max_age_bars` is declared in unsourced_params because it is an engineering default, not a number any source stated - see docs/PROVENANCE.md."
+}

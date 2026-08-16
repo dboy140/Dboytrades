@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dboytrades.local/schemas/rule.schema.json",
+  "title": "Executable Rule",
+  "description": "A machine-readable trading rule. Every rule must derive from at least one claim, which in turn carries verbatim video evidence; this is the link that makes the final system citable end to end.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["rule_id", "name", "phase", "when", "then", "derived_from", "status"],
+  "properties": {
+    "_comment": {
+      "type": "string",
+      "description": "Free-text annotation, ignored by all tooling. Allowed so that copied templates do not fail validation on an unexpected key."
+    },
+    "rule_id": { "type": "string", "pattern": "^rul_[a-z0-9_]{3,48}$" },
+    "name": { "type": "string", "minLength": 3 },
+    "phase": {
+      "type": "string",
+      "enum": ["bias", "filter", "setup", "entry", "stop", "target", "risk"]
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Lower runs first within a phase. Determines precedence when two rules in the same phase both fire."
+    },
+    "when": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Conditions ANDed together. Each is a structured predicate so the rule can be evaluated by a backtester without parsing prose.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fact", "op", "value"],
+        "properties": {
+          "fact": {
+            "type": "string",
+            "description": "Name of a market fact the evaluation engine must supply, e.g. 'htf_bias', 'session', 'fvg.present', 'price.in_discount'."
+          },
+          "op": {
+            "type": "string",
+            "enum": ["eq", "neq", "gt", "gte", "lt", "lte", "in", "not_in", "within_minutes_of", "crosses"]
+          },
+          "value": {
+            "description": "Scalar or array operand.",
+            "type": ["string", "number", "boolean", "array", "null"]
+          },
+          "timeframe": {
+            "type": "string",
+            "description": "Timeframe the fact is measured on, e.g. '1m', '5m', '15m', '1h', '4h', '1D'."
+          }
+        }
+      }
+    },
+    "then": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["set_bias", "block_trading", "arm_setup", "enter", "place_stop", "place_target", "size_position", "exit"]
+        },
+        "params": {
+          "type": "object",
+          "description": "Action operands. Every numeric threshold here is a parameter that must be justified by a citation or explicitly marked as an unsourced default.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "unsourced_params": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Parameter names in `then.params` that are engineering defaults NOT stated by any source. Declaring them here is mandatory and honest; `ictkb validate` reports them so nobody mistakes a chosen number for a taught one."
+    },
+    "derived_from": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^clm_[a-f0-9]{12}$" },
+      "description": "Claim IDs. Must resolve against kb/claims/."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "accepted", "rejected"],
+      "description": "Only 'accepted' rules are compiled into the system bundle."
+    },
+    "notes": { "type": "string" }
+  }
+}
