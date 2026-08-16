@@ -1,3 +1,6 @@
-requests>=2.31
-PyYAML>=6.0
-jsonschema>=4.20
+apify-client>=3.1
+pydantic>=2.6
+pandas>=2.0
+tenacity>=8.2
+python-dotenv>=1.0
+pytest>=8.0

@@ -2,14 +2,15 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.pytest_cache/
+
+# Secrets
 .env
 
-# Raw and derived corpora are large and re-fetchable; the knowledge base
-# (kb/) is the durable, reviewed artifact and IS tracked.
-data/raw/*
-data/derived/*
-!data/raw/.gitkeep
-!data/derived/.gitkeep
+# Raw transcripts stay local. Personal research, not redistribution.
+data/transcripts/
+data/transcripts/*
 
-system/build/
-.pytest_cache/
+# Large or regenerable intermediates
+*.tmp
+logs/*.log

@@ -1,14 +1,12 @@
-# Why the knowledge base is empty
+# Gate 1 cannot be reached: Apify and YouTube are blocked
 
-**Status: ingestion has never run. The corpus contains zero videos and zero
-segments. No claim or rule in this repository is derived from source material,
-because no source material could be fetched.**
+**Status: Phase 0 complete. Phase 1 discovery has never run. `data/manifest.json`
+does not exist. Zero videos have been discovered, zero transcripts fetched.**
 
 ## What was attempted
 
-The session that built this pipeline had no route to either service the task
-depends on. Both hosts are refused at the egress gateway, and there is no Apify
-credential in the environment.
+Both services this pipeline depends on are refused at the egress gateway, and
+no Apify credential is present in the environment.
 
 | Requirement | Result |
 | --- | --- |
@@ -17,7 +15,7 @@ credential in the environment.
 | `APIFY_TOKEN` / `APIFY_API_TOKEN` | not set |
 | `pypi.org`, `api.github.com` | reachable |
 
-The proxy recorded both denials itself:
+The proxy recorded the denials itself:
 
 ```json
 {"kind": "connect_rejected",
@@ -26,90 +24,93 @@ The proxy recorded both denials itself:
 ```
 
 A 403 on `CONNECT` is a policy decision, not a transient fault. The environment's
-own operating guidance is explicit that such denials must be reported rather
-than retried or routed around, so no workaround was attempted.
+operating guidance is explicit that such denials are reported rather than
+retried or routed around, so no workaround was attempted. `apify_runner.py`
+encodes this distinction: transient faults retry with backoff, policy denials
+raise `ApifyBlocked` immediately.
 
-You can reproduce the diagnosis at any time:
+Reproduce the diagnosis at any time:
 
 ```bash
-python -m ictkb doctor
+python -m scripts.verify_env      # exit 2 while blocked
 ```
+
+## What this means for the gates
+
+- **Gate 1** cannot produce real numbers. Video counts per bucket, NBB totals,
+  runtime hours and Apify cost estimates all require enumeration to have run.
+  Any figure presented for them now would be fabricated.
+- **The actor bake-off** cannot run either, so `CHOSEN_TRANSCRIPT_ACTOR` in
+  `scripts/config.py` is still `None`. Which of the four transcript actors to
+  use is an open question that only a live test can answer, since the deciding
+  factors are timestamp granularity and real cost per video.
 
 ## What was deliberately not done
 
-The obvious way to produce a finished-looking deliverable here would have been
-to write out a trading system from general knowledge of ICT concepts and attach
-video IDs and timestamps to it.
+No manifest was invented, no video IDs were guessed, and no rules were written
+from general knowledge of ICT material.
 
-That was not done, and the tooling is built to make it hard to do by accident.
-Invented citations are worse than an empty repository: an empty repository is
-visibly unfinished, whereas a fabricated one is indistinguishable from real
-research until somebody opens a video at the cited timestamp and finds nothing
-there. Since the entire premise of this project is that every claim traces to a
-video ID and timestamp, fabricated provenance would not be a shortcut to the
-goal — it would be the precise opposite of it.
+Fabricated citations would be worse than an empty repository. An empty repo is
+visibly unfinished; a fabricated one is indistinguishable from real research
+until someone opens a video at the cited timestamp and finds nothing there.
+Since the whole premise is that every rule traces to a video ID and timestamp,
+inventing provenance would invert the goal rather than approximate it.
 
-Concretely, the following are absent by design:
-
-- no claim files in `kb/claims/`
-- no rule files in `kb/rules/`
-- no transcript data in `data/`
-- `system/TRADING_SYSTEM.md` reports itself as **not executable** and names
-  every phase that has no sourced rule
-
-`config/sources.yaml` carries `verified: false` on every source and actor for
-the same reason: the channel handles and Apify actor IDs in it are conventional
-guesses that could not be checked against a live service. `NBBTRADER` in
-particular must be confirmed against the real channel before ingestion — several
-similarly-named accounts exist, and ingesting the wrong one would attribute
-another person's words to this source key.
+The channel IDs in `scripts/config.py` are recorded as `operator_supplied` with
+`verified: False`. They came from the task brief, not from a live lookup, and
+`verify_channels()` must confirm them before any paid run — including resolving
+which of the two candidate NBBTRADER channels is the live one.
 
 ## Unblocking
 
 1. **Allowlist the hosts.** `api.apify.com` is required. `www.youtube.com` is
-   not strictly required if all fetching happens through Apify's own
-   infrastructure, but it is needed to verify channels by hand and to spot-check
-   a citation by opening it.
+   needed to verify channels by hand and to spot-check that a citation lands
+   where it claims.
 
 2. **Provide a token.**
 
    ```bash
-   export APIFY_TOKEN=apify_api_...   # console.apify.com/account/integrations
+   cp .env.example .env      # then paste your token
+   # or: export APIFY_TOKEN=apify_api_...
    ```
 
-3. **Verify configuration, then flip the `verified` flags.**
+3. **Preflight.**
 
    ```bash
-   python -m ictkb doctor
+   python -m scripts.verify_env
    ```
 
-   `doctor` confirms the token, probes each configured actor, and falls back
-   through the alternates listed in `config/sources.yaml`. Fix anything it
-   reports before spending money on a run — the channel scraper bills per video.
+   Confirms the token, probes the enumeration actor and reports which of the
+   four transcript candidates are reachable.
 
-4. **Ingest, starting small.**
+4. **Resolve the channels, then discover.**
 
    ```bash
-   python -m ictkb ingest --limit 25
+   python -m scripts.discover --dry-run     # exercise plumbing, no spend
+   python -m scripts.discover               # real enumeration
    ```
 
-   Inspect `data/derived/segments.jsonl` and confirm that timestamps in the
-   `url` field actually land on the words in the `text` field. Transcript actors
-   disagree about units, and a silent seconds/milliseconds error would misplace
-   every citation in the corpus while still looking well-formed. Only scale up
-   once a handful of URLs have been opened and checked by hand.
+   `verify_channels()` runs first and writes `data/channel_probe.json` with
+   sample titles from both NBBTRADER candidates. Confirm which is live and set
+   `verified: True` before trusting the manifest.
 
-5. **Then follow `docs/PROVENANCE.md`** to turn segments into claims, claims
-   into rules, and rules into the system.
+5. **Bake off the transcript actors, then choose.**
+
+   ```bash
+   python -m scripts.actor_bakeoff
+   ```
+
+   Reports success, segment count, timestamp granularity and real cost per
+   video for each candidate. An actor that returns one untimed block of text is
+   unusable here at any price, because every citation would read 00:00:00.
 
 ## If Apify stays blocked
 
-The pipeline's dependency on Apify is confined to `src/ictkb/apify.py` and the
-two fetch functions in `src/ictkb/ingest.py`. Everything downstream — windowing,
-search, claim grounding, validation, distillation — operates on
-`data/derived/segments.jsonl` and does not care how that file was produced.
+Apify is confined to `scripts/apify_runner.py` and the fetch functions in
+`scripts/discover.py`. Everything downstream — bucket filtering, the manifest,
+the models, rule extraction and verification — operates on plain JSON and does
+not care how it was produced.
 
-Any transcript source that can emit segments matching `schemas/segment.schema.json`
-will work unchanged, including a local run of `yt-dlp --write-auto-sub` on a
-machine that does have YouTube access. That substitution is a config and
-ingestion-adapter change, not a rewrite.
+Any transcript source that can emit the `Transcript` shape in `scripts/models.py`
+works unchanged, including a local `yt-dlp --write-auto-sub` run on a machine
+with YouTube access. That is an ingestion-adapter change, not a rewrite.
