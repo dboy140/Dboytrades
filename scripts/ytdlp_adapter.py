@@ -213,6 +213,31 @@ def enumerate_channel(
     return out
 
 
+def search_videos(query: str, max_results: int = 30, *, timeout: int = 300) -> list[dict[str, Any]]:
+    """YouTube search via yt-dlp's `ytsearchN:` pseudo-URL.
+
+    Used for NBB's guest appearances on other people's channels, which channel
+    enumeration cannot see by definition.
+    """
+    args = _base_args() + [
+        "--flat-playlist",
+        "--dump-json",
+        f"ytsearch{int(max_results)}:{query}",
+    ]
+    proc = _run(args, timeout)
+
+    entries: list[dict[str, Any]] = []
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return entries
+
+
 def fetch_metadata(video_id: str, *, timeout: int = 120) -> dict[str, Any] | None:
     """Full metadata for one video, including the description.
 

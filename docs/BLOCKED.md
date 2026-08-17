@@ -1,4 +1,4 @@
-# Gate 1 cannot be reached: Apify and YouTube are blocked
+# Gate 1 cannot be reached: YouTube is blocked
 
 **Status: Phase 0 complete. Phase 1 discovery has never run. `data/manifest.json`
 does not exist. Zero videos have been discovered, zero transcripts fetched.**

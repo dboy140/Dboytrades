@@ -1,134 +1,116 @@
-"""Tests for discovery parsing and filtering.
+"""Tests for Phase 1 filtering and Gate 1 reporting.
 
-Actor output shapes are unverified (see docs/BLOCKED.md), so the parser is
-tolerant by design. These tests pin down that tolerance: what it accepts, and
-what it refuses to guess at.
+Video-level parsing tolerance lives in test_ytdlp_adapter.py; this module
+covers what happens once videos exist as VideoMeta.
 """
 
-from scripts.discover import (
-    _extract_video_id,
-    _parse_duration,
-    apply_bucket_filter,
-    build_report,
-    to_video_meta,
-)
-from scripts.models import VideoMeta
-
-VID = "abcDEF12345"
+from scripts import config as cfg
+from scripts.discover import apply_bucket_filter, build_report, print_gate1
+from scripts.models import ExcludedVideo, VideoMeta
 
 
-class TestExtractVideoId:
-    def test_direct_id_field(self):
-        assert _extract_video_id({"id": VID}) == VID
-
-    def test_alternate_id_fields(self):
-        assert _extract_video_id({"videoId": VID}) == VID
-        assert _extract_video_id({"video_id": VID}) == VID
-
-    def test_falls_back_to_url(self):
-        assert _extract_video_id({"url": f"https://www.youtube.com/watch?v={VID}"}) == VID
-
-    def test_shorts_and_live_urls(self):
-        assert _extract_video_id({"url": f"https://www.youtube.com/shorts/{VID}"}) == VID
-        assert _extract_video_id({"url": f"https://www.youtube.com/live/{VID}"}) == VID
-        assert _extract_video_id({"url": f"https://youtu.be/{VID}"}) == VID
-
-    def test_non_id_in_id_field_recovered_from_url(self):
-        # Some actors put a database key in `id` and the real id only in the URL.
-        item = {"id": "12345", "url": f"https://youtu.be/{VID}"}
-        assert _extract_video_id(item) == VID
-
-    def test_returns_none_when_unresolvable(self):
-        assert _extract_video_id({"title": "no id anywhere"}) is None
-
-
-class TestParseDuration:
-    def test_seconds_int(self):
-        assert _parse_duration(3600) == 3600
-
-    def test_numeric_string(self):
-        assert _parse_duration("125") == 125
-
-    def test_hhmmss(self):
-        assert _parse_duration("01:02:03") == 3723
-
-    def test_mmss(self):
-        assert _parse_duration("07:30") == 450
-
-    def test_garbage_returns_none(self):
-        assert _parse_duration("a while") is None
-        assert _parse_duration(None) is None
-
-
-class TestToVideoMeta:
-    def test_builds_from_minimal_row(self):
-        m = to_video_meta({"id": VID, "title": "Silver Bullet"}, "ICT", "channel")
-        assert m is not None
-        assert m.video_id == VID
-        assert m.channel_key == "ICT"
-        assert m.discovered_via == "channel"
-
-    def test_detects_shorts(self):
-        m = to_video_meta({"url": f"https://www.youtube.com/shorts/{VID}"}, "NBBTRADER", "channel")
-        assert m is not None and m.is_short
-
-    def test_unresolvable_row_returns_none(self):
-        assert to_video_meta({"title": "orphan"}, "ICT", "channel") is None
-
-    def test_long_description_is_truncated(self):
-        m = to_video_meta({"id": VID, "title": "t", "description": "x" * 9000}, "ICT", "channel")
-        assert m is not None and len(m.description) <= 4000
+def v(vid: str, title: str, channel_key: str = "ICT", **kw) -> VideoMeta:
+    return VideoMeta(video_id=vid, title=title, url="u", channel_key=channel_key, **kw)
 
 
 class TestBucketFilter:
-    def _v(self, vid, title):
-        return VideoMeta(video_id=vid, title=title, url="u", channel_key="ICT")
-
     def test_splits_kept_and_excluded(self):
-        videos = [
-            self._v("aaaaaaaaaaa", "ICT Silver Bullet Strategy"),
-            self._v("bbbbbbbbbbb", "Random Life Vlog"),
-        ]
-        kept, excluded = apply_bucket_filter(videos)
-        assert [v.video_id for v in kept] == ["aaaaaaaaaaa"]
-        assert [e.video_id for e in excluded] == ["bbbbbbbbbbb"]
+        kept, excluded = apply_bucket_filter([
+            v("aaaaaaaaaaa", "ICT Silver Bullet Strategy"),
+            v("bbbbbbbbbbb", "Random Life Vlog"),
+        ])
+        assert [x.video_id for x in kept] == ["aaaaaaaaaaa"]
+        assert [x.video_id for x in excluded] == ["bbbbbbbbbbb"]
 
     def test_kept_videos_carry_their_buckets(self):
-        kept, _ = apply_bucket_filter([self._v("aaaaaaaaaaa", "Silver Bullet in the London Killzone")])
+        kept, _ = apply_bucket_filter([v("aaaaaaaaaaa", "Silver Bullet in the London Killzone")])
         assert set(kept[0].buckets) == {"silver_bullet", "london_session"}
 
-    def test_excluded_records_a_reason(self):
-        _, excluded = apply_bucket_filter([self._v("bbbbbbbbbbb", "Unrelated")])
+    def test_multi_bucket_membership_preserved(self):
+        kept, _ = apply_bucket_filter([
+            v("aaaaaaaaaaa", "Silver Bullet in the New York Killzone using FVG")
+        ])
+        assert {"silver_bullet", "new_york_session", "fair_value_gaps"} <= set(kept[0].buckets)
+
+    def test_excluded_records_title_and_reason(self):
+        _, excluded = apply_bucket_filter([v("bbbbbbbbbbb", "Unrelated Chat")])
         assert excluded[0].reason == "no_bucket_match"
-        assert excluded[0].title == "Unrelated"
+        assert excluded[0].title == "Unrelated Chat"
+
+    def test_description_match_counts(self):
+        kept, _ = apply_bucket_filter([
+            v("aaaaaaaaaaa", "Episode 12", description="today we cover the judas swing")
+        ])
+        assert "london_session" in kept[0].buckets
+
+    def test_empty_input(self):
+        kept, excluded = apply_bucket_filter([])
+        assert kept == [] and excluded == []
 
 
 class TestReport:
-    def test_counts_and_flags_thin_buckets(self):
+    def test_counts_per_bucket_and_runtime(self):
         manifest = [
-            VideoMeta(video_id="aaaaaaaaaaa", title="Silver Bullet", url="u",
-                      channel_key="ICT", buckets=["silver_bullet"], duration_seconds=3600),
-            VideoMeta(video_id="ccccccccccc", title="NBB video", url="u",
-                      channel_key="NBBTRADER", duration_seconds=1800),
+            v("aaaaaaaaaaa", "Silver Bullet", buckets=["silver_bullet"], duration_seconds=3600),
+            v("ccccccccccc", "NBB video", channel_key="NBBTRADER", duration_seconds=1800),
         ]
-        report = build_report(manifest, [], ict_enumerated=50)
+        r = build_report(manifest, [], ict_enumerated=50)
 
-        assert report.ict_in_scope == 1
-        assert report.nbb_total == 1
-        assert report.ict_total_enumerated == 50
-        assert report.total_runtime_hours == 1.5
-        assert report.ict_per_bucket["silver_bullet"] == 1
-        assert report.ict_per_bucket["money_maker_model"] == 0
-        # Every bucket below three videos should be surfaced, not buried.
-        assert any("thin buckets" in n for n in report.notes)
+        assert r.ict_total_enumerated == 50
+        assert r.ict_in_scope == 1
+        assert r.nbb_total == 1
+        assert r.total_runtime_hours == 1.5
+        assert r.ict_per_bucket["silver_bullet"] == 1
+        assert r.ict_per_bucket["money_maker_model"] == 0
+
+    def test_cost_is_zero_on_ytdlp(self):
+        assert build_report([], [], 0).estimated_cost_usd == 0.0
+
+    def test_thin_buckets_surfaced(self):
+        r = build_report([v("aaaaaaaaaaa", "x", buckets=["silver_bullet"])], [], 1)
+        assert any("thin buckets" in n for n in r.notes)
+
+    def test_every_bucket_present_in_report(self):
+        """A bucket with zero hits must still appear, so gaps are visible."""
+        r = build_report([], [], 0)
+        assert set(r.ict_per_bucket) == {b.key for b in cfg.ICT_BUCKETS}
 
     def test_counts_shorts_and_guest_appearances(self):
         manifest = [
-            VideoMeta(video_id="ddddddddddd", title="s", url="https://youtube.com/shorts/x",
-                      channel_key="NBBTRADER", is_short=True),
-            VideoMeta(video_id="eeeeeeeeeee", title="g", url="u", channel_key="NBBTRADER",
-                      discovered_via="guest_search:NBBTRADER podcast"),
+            v("ddddddddddd", "s", channel_key="NBBTRADER", is_short=True),
+            v("eeeeeeeeeee", "g", channel_key="NBBTRADER",
+              discovered_via="guest_search:NBBTRADER podcast"),
         ]
-        report = build_report(manifest, [], ict_enumerated=0)
-        assert report.nbb_shorts == 1
-        assert report.nbb_guest_appearances == 1
+        r = build_report(manifest, [], 0)
+        assert r.nbb_shorts == 1
+        assert r.nbb_guest_appearances == 1
+
+    def test_excluded_count_reported(self):
+        excluded = [ExcludedVideo(video_id="fffffffffff", title="cut")]
+        assert build_report([], excluded, 10).ict_excluded == 1
+
+
+class TestGate1Output:
+    def test_prints_all_eight_buckets_and_probe(self, capsys):
+        r = build_report([v("aaaaaaaaaaa", "Silver Bullet", buckets=["silver_bullet"])], [], 1)
+        probe = {
+            "UCo6TS8uarO5r562d4lESg9w": {
+                "channel_id": "UCo6TS8uarO5r562d4lESg9w",
+                "video_count_sampled": 5,
+                "channel_names": ["NBBTRADER"],
+                "sample_titles": ["A video title"],
+            },
+            "UCmtJ3lDd2fjt-IMf6lfzlcA": {
+                "channel_id": "UCmtJ3lDd2fjt-IMf6lfzlcA",
+                "error": "channel not found",
+            },
+        }
+        print_gate1(r, probe)
+        out = capsys.readouterr().out
+
+        for b in cfg.ICT_BUCKETS:
+            assert b.display_name in out
+        # Both candidates must be shown so the operator can adjudicate.
+        assert "UCo6TS8uarO5r562d4lESg9w" in out
+        assert "UCmtJ3lDd2fjt-IMf6lfzlcA" in out
+        assert "STOP" in out

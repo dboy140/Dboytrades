@@ -1,19 +1,16 @@
 """Single source of truth: channels, topic buckets, paths, settings.
 
-Nothing in this repository hardcodes a channel ID, an actor name, a bucket
-keyword or a path. If you need to change what gets scraped, change it here.
+Nothing in this repository hardcodes a channel ID, a bucket keyword or a
+path. If you need to change what gets scraped, change it here.
 """
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(ROOT / ".env")
 
 # ---------------------------------------------------------------- paths ----
 
@@ -30,8 +27,6 @@ RULES_JSON = EXTRACTION / "rules.json"
 STRATEGY = ROOT / "strategy"
 LOGS = ROOT / "logs"
 FAILED_LOG = LOGS / "failed.json"
-BAKEOFF_REPORT = LOGS / "actor_bakeoff.json"
-COST_LEDGER = LOGS / "cost_ledger.json"
 
 ALL_DIRS = [DATA, TRANSCRIPTS, NOTES, EXTRACTION, STRATEGY, LOGS]
 
@@ -62,8 +57,8 @@ class Channel:
     handle: str | None
     scope: str  # "filtered" | "complete"
     # Operator-supplied values are recorded as such. They have NOT been checked
-    # against the live YouTube API from this environment, so `verify_channels`
-    # must confirm them before any paid enumeration run.
+    # against the live site from this environment, so discovery probes and
+    # reports them rather than assuming they are right.
     provenance: str = "operator_supplied"
     verified: bool = False
     note: str = ""
@@ -80,8 +75,8 @@ CHANNELS: list[Channel] = [
         channel_id="UCtjxa77NqamhVC8atV85Rog",
         handle="@InnerCircleTrader",
         scope="filtered",
-        note="Eight topic buckets only. Do NOT enumerate the full back catalogue "
-        "into transcripts; metadata enumeration is cheap, transcripts are not.",
+        note="Eight topic buckets only. Enumerate the full catalogue for "
+        "metadata (cheap), but only pull transcripts for bucket matches.",
     ),
     Channel(
         key="NBBTRADER",
@@ -93,8 +88,8 @@ CHANNELS: list[Channel] = [
     ),
 ]
 
-# A second similarly-named channel exists. `verify_channels` probes both and
-# reports which is active so the right one can be promoted before scraping.
+# A second similarly-named channel exists. Discovery probes both and reports
+# samples from each so the right one can be promoted before scraping.
 NBB_CANDIDATE_IDS = [
     "UCo6TS8uarO5r562d4lESg9w",  # primary per operator
     "UCmtJ3lDd2fjt-IMf6lfzlcA",  # alternate to rule out
@@ -236,42 +231,10 @@ ADJACENT_CONCEPTS = [
 ]
 
 
-# --------------------------------------------------------------- actors ----
-
-
-@dataclass
-class ActorCandidate:
-    actor_id: str          # tilde form, as the REST API expects
-    label: str
-    note: str = ""
-
-
-# Stage 1: enumeration (cheap, metadata only).
-ENUMERATION_ACTOR = ActorCandidate(
-    "streamers~youtube-scraper",
-    "streamers/youtube-scraper",
-    "Channel + search enumeration. Verify availability with verify_env.py.",
-)
-
-# Stage 2: transcripts. Tested head-to-head by actor_bakeoff.py on a single
-# video before any batch run; the operator picks the winner.
-TRANSCRIPT_ACTOR_CANDIDATES = [
-    ActorCandidate("automation-lab~youtube-transcript", "automation-lab/youtube-transcript"),
-    ActorCandidate("topaz_sharingan~youtube-transcript-scraper", "topaz_sharingan/youtube-transcript-scraper"),
-    ActorCandidate("openclawmara~youtube-transcript-scraper", "openclawmara/youtube-transcript-scraper"),
-    ActorCandidate("visita~youtube-scraper", "visita/youtube-scraper", "Also returns metadata and comments."),
-]
-
-# Set once the bake-off has run and the operator has chosen.
-CHOSEN_TRANSCRIPT_ACTOR: str | None = None
-
-
 # ---------------------------------------------------------- yt-dlp path ----
 
-# The yt-dlp backend needs only youtube.com — no Apify account, no per-video
-# billing. It is the default because it removes a paid dependency and a whole
-# class of "which actor emits which field name" uncertainty.
-BACKEND = "ytdlp"  # "ytdlp" | "apify"
+# Fetching is yt-dlp only: it needs nothing but youtube.com — no API key, no
+# account, no per-video billing.
 
 # YouTube increasingly rate-limits or challenges datacentre IPs. If enumeration
 # starts returning nothing, supplying cookies from a signed-in browser is the
@@ -292,27 +255,12 @@ YTDLP_SUB_LANGS = ["en.*", "en"]
 
 # ------------------------------------------------------------- settings ----
 
-# Spend guard. Any run whose estimate exceeds this stops and asks first.
-COST_ALERT_THRESHOLD_USD = 5.00
-
 # Enumeration caps. Deliberately generous for ICT because filtering happens
 # after enumeration, and metadata is cheap relative to transcripts.
 ICT_ENUMERATION_MAX = 1200
 NBB_ENUMERATION_MAX = 1500
-SEARCH_QUERY_MAX_RESULTS = 60
 
-RETRY_ATTEMPTS = 4
-RETRY_BACKOFF_SECONDS = 2
-RUN_POLL_SECONDS = 10
-RUN_MAX_WAIT_SECONDS = 3600
+# Guest-appearance search breadth.
+SEARCH_QUERY_MAX_RESULTS = 30
 
 
-def apify_token() -> str:
-    token = os.environ.get("APIFY_TOKEN") or os.environ.get("APIFY_API_TOKEN")
-    if not token:
-        raise RuntimeError(
-            "APIFY_TOKEN is not set. Copy .env.example to .env and add your token "
-            "from https://console.apify.com/account/integrations, or export it:\n"
-            "    export APIFY_TOKEN=apify_api_..."
-        )
-    return token

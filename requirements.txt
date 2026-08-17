@@ -1,6 +1,6 @@
-apify-client>=3.1
+# Fetching is yt-dlp only — no API key, no account, no per-video billing.
+yt-dlp>=2024.1
 pydantic>=2.6
-pandas>=2.0
-tenacity>=8.2
-python-dotenv>=1.0
+
+# Tests only.
 pytest>=8.0
