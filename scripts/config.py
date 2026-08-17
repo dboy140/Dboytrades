@@ -266,6 +266,30 @@ TRANSCRIPT_ACTOR_CANDIDATES = [
 CHOSEN_TRANSCRIPT_ACTOR: str | None = None
 
 
+# ---------------------------------------------------------- yt-dlp path ----
+
+# The yt-dlp backend needs only youtube.com — no Apify account, no per-video
+# billing. It is the default because it removes a paid dependency and a whole
+# class of "which actor emits which field name" uncertainty.
+BACKEND = "ytdlp"  # "ytdlp" | "apify"
+
+# YouTube increasingly rate-limits or challenges datacentre IPs. If enumeration
+# starts returning nothing, supplying cookies from a signed-in browser is the
+# usual fix: set one of these (browser name e.g. "chrome"/"firefox", or a path
+# to a cookies.txt export).
+YTDLP_COOKIES_FROM_BROWSER: str | None = None
+YTDLP_COOKIES_FILE: str | None = None
+
+# Politeness. Raising these is the first thing to try if YouTube starts
+# throttling a long run.
+YTDLP_SLEEP_REQUESTS: float = 1.0        # between yt-dlp's own HTTP requests
+YTDLP_SLEEP_BETWEEN_VIDEOS: float = 1.0  # between videos during transcript pulls
+
+# Caption languages, in preference order. "en.*" catches en-GB, en-US and the
+# auto-generated "en-orig" variants.
+YTDLP_SUB_LANGS = ["en.*", "en"]
+
+
 # ------------------------------------------------------------- settings ----
 
 # Spend guard. Any run whose estimate exceeds this stops and asks first.

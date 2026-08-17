@@ -104,6 +104,8 @@ class Transcript(BaseModel):
     buckets: list[str] = Field(default_factory=list)
     segments: list[TranscriptSegment] = Field(default_factory=list)
     caption_kind: Literal["manual", "auto", "unknown"] = "unknown"
+    language: str = "en"
+    # Which backend produced this: "yt-dlp" or an Apify actor id.
     actor_used: str = ""
     fetched_at: str = ""
 

@@ -9,23 +9,35 @@ enforced by the type system and the verification pass, not by discipline.
 
 ---
 
-## Status: Phase 0 complete, Gate 1 blocked
+## Status: pipeline complete, Gate 1 blocked in the build environment
 
 **Discovery has never run. `data/manifest.json` does not exist. Zero videos
 found, zero transcripts fetched.**
 
-| Requirement | Result |
+The environment this was built in cannot reach YouTube *or* Apify:
+
+| Host | Result |
 | --- | --- |
-| `api.apify.com:443` | `403` to `CONNECT` — org egress policy denial |
 | `www.youtube.com:443` | `403` to `CONNECT` — org egress policy denial |
-| `APIFY_TOKEN` | not set |
+| `api.apify.com:443` | `403` to `CONNECT` — org egress policy denial |
+
+yt-dlp confirms it directly: `Tunnel connection failed: 403 Forbidden`.
 
 Gate 1 asks for video counts per bucket, NBB totals, runtime hours and cost.
 All four require enumeration to have happened, so presenting any number for
-them now would mean inventing it. Nothing was invented — see
+them would mean inventing it. Nothing was invented — see
 [docs/BLOCKED.md](docs/BLOCKED.md).
 
-Reproduce: `python -m scripts.verify_env` (exit 2 while blocked).
+**This is an environment limitation, not a code one.** The pipeline runs
+anywhere YouTube is reachable, and needs no API key or paid account:
+
+```bash
+pip install -r requirements.txt
+python -m scripts.discover_ytdlp      # Gate 1
+python -m scripts.ingest_ytdlp        # Gate 2
+```
+
+Reproduce the block: `python -m scripts.verify_env` (exit 2 while blocked).
 
 ---
 
@@ -44,41 +56,74 @@ captured as context inside an in-scope video's notes. They never trigger a
 separate video hunt — `find_adjacent_concepts()` exists for exactly this, and
 the bucket filter deliberately does not match on them.
 
+## Two backends
+
+**yt-dlp (default).** Needs only `youtube.com`. No account, no API key, no
+per-video billing. `--flat-playlist --dump-json` enumerates a channel in one
+request per tab; captions come from YouTube's own `json3` format, whose
+timestamps are unambiguously milliseconds.
+
+**Apify (optional).** Retained and working. Needs `api.apify.com` plus a token,
+and bills per video. Use it if YouTube blocks your IP and you would rather pay
+someone else's infrastructure to fetch than manage cookies.
+
+Nothing downstream knows which backend produced the data — both emit identical
+manifest and transcript shapes.
+
 ## Layout
 
 ```
-scripts/config.py        single source of truth: channels, 8 buckets, paths
-scripts/models.py        pydantic contracts; a Rule cannot exist without a source
-scripts/bucketing.py     the eight-bucket filter
-scripts/apify_runner.py  retries transient faults, refuses to retry policy denials
-scripts/discover.py      Phase 1: verify -> enumerate -> filter -> Gate 1
-scripts/actor_bakeoff.py compares the four transcript actors on one video
-scripts/verify_env.py    preflight
-data/transcripts/        raw, local only, gitignored
-data/notes/              per-video structured extraction
-extraction/rules.json    atomic deduped rules
-strategy/                final deliverables
+scripts/config.py         single source of truth: channels, 8 buckets, paths
+scripts/models.py         pydantic contracts; a Rule cannot exist without a source
+scripts/bucketing.py      the eight-bucket filter
+scripts/ytdlp_adapter.py  yt-dlp enumeration + json3 caption parsing
+scripts/discover_ytdlp.py Phase 1 via yt-dlp -> Gate 1
+scripts/ingest_ytdlp.py   Phase 2 via yt-dlp -> Gate 2
+scripts/apify_runner.py   Apify path: retries transient, never retries denials
+scripts/discover.py       Phase 1 via Apify; shared filter/report used by both
+scripts/actor_bakeoff.py  compares the four Apify transcript actors
+scripts/verify_env.py     preflight
+data/transcripts/         raw, local only, gitignored
+data/notes/               per-video structured extraction
+extraction/rules.json     atomic deduped rules
+strategy/                 final deliverables
 ```
 
-## Setup
+## Running (yt-dlp path)
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env      # add APIFY_TOKEN
+
+python -m scripts.discover_ytdlp              # Phase 1 -> Gate 1
+python -m scripts.discover_ytdlp --deep-scan  # slower, better recall (see below)
+
+python -m scripts.ingest_ytdlp --limit 5      # trial run first
+python -m scripts.ingest_ytdlp                # full pull -> Gate 2
+
+python -m pytest -q                           # 103 tests, no network
 ```
 
-## Running
+Both phases are idempotent. Discovery short-circuits on an existing manifest
+unless `--refresh`; ingestion skips any transcript already on disk, so an
+interrupted run resumes for free.
 
-```bash
-python -m scripts.verify_env             # preflight: token, egress, actors
-python -m scripts.discover --dry-run     # exercise plumbing, zero spend
-python -m scripts.discover               # Phase 1, stops at Gate 1
-python -m scripts.actor_bakeoff          # compare transcript actors, then ask
-python -m pytest -q                      # 73 tests
+### The `--deep-scan` tradeoff
+
+`--flat-playlist` is one cheap request per channel tab but returns **no
+description**, so bucket matching is title-only by default. `--deep-scan` adds
+a second pass that fetches descriptions for videos which did *not* match on
+title, catching ones whose titles are vague. It costs one request per unmatched
+video, so on a large back catalogue it is slow. Gate 1 reports which mode ran.
+
+### If YouTube throttles you
+
+Long runs from datacentre IPs get challenged. In `config.py`:
+
+```python
+YTDLP_COOKIES_FROM_BROWSER = "chrome"   # or "firefox"
+YTDLP_SLEEP_REQUESTS = 2.0
+YTDLP_SLEEP_BETWEEN_VIDEOS = 2.0
 ```
-
-Discovery is idempotent: an existing non-empty manifest short-circuits the run
-unless `--refresh` is passed.
 
 ## Design notes
 
@@ -106,9 +151,20 @@ than editing the operator's list, additions live in a separate `extra_keywords`
 field so they can be reviewed and rejected. **These are worth a look before the
 first real run.**
 
-**Spend is guarded and logged.** Any run estimated above
-`COST_ALERT_THRESHOLD_USD` ($5) raises `SpendGuard` rather than executing. Every
-run appends to `logs/cost_ledger.json`.
+**Spend is guarded and logged.** On the Apify path, any run estimated above
+`COST_ALERT_THRESHOLD_USD` ($5) raises `SpendGuard` rather than executing, and
+every run appends to `logs/cost_ledger.json`. The yt-dlp path costs nothing but
+time.
+
+**Caption kind is established, not guessed.** Manual captions are requested in
+their own pass first; only if none exist is the auto-generated track fetched.
+That makes `caption_kind` a fact, which matters because auto-captions
+routinely mangle trading jargon and the field caps a claim's confidence.
+
+**json3, not VTT.** YouTube's `json3` caption format carries `tStartMs`
+directly, so there is no seconds-versus-milliseconds ambiguity to resolve. A
+silent 1000x error would misplace every citation in the corpus while leaving it
+perfectly well-formed; there is a test pinning the conversion.
 
 **Policy denials are never retried.** `apify_runner` splits failures into
 transient (retry with exponential backoff via tenacity) and blocked (raise
@@ -121,6 +177,9 @@ redistribution.
 
 ## Tests
 
-73 tests, no network required. They cover the bucket filter's edge cases
-(IFVG/FVG separation, plurals, acronyms inside words), the tolerant actor-output
-parser, and the model contracts that make an uncited rule unrepresentable.
+103 tests, no network required. They cover the bucket filter's edge cases
+(IFVG/FVG separation, plurals, acronyms inside words), json3 caption parsing
+against the real format (millisecond conversion, padding events, unsorted
+input), the tolerant actor-output parser, network-block detection that does not
+misclassify a private video as an outage, and the model contracts that make an
+uncited rule unrepresentable.

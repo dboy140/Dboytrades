@@ -114,3 +114,38 @@ not care how it was produced.
 Any transcript source that can emit the `Transcript` shape in `scripts/models.py`
 works unchanged, including a local `yt-dlp --write-auto-sub` run on a machine
 with YouTube access. That is an ingestion-adapter change, not a rewrite.
+
+---
+
+## Update: yt-dlp backend added, YouTube is blocked too
+
+Apify was dropped as the required path and a yt-dlp backend added, on the
+reasoning that it needs only `youtube.com` rather than `api.apify.com` plus a
+paid account. **YouTube is blocked in this environment as well**, so it changes
+nothing here — but it removes the Apify dependency entirely for anyone running
+the pipeline somewhere with normal network access.
+
+yt-dlp's own output, run against the ICT channel:
+
+```
+ERROR: [youtube:tab] UCtjxa77NqamhVC8atV85Rog/videos: Unable to download API
+page: ('Unable to connect to proxy', OSError('Tunnel connection failed: 403
+Forbidden'))
+```
+
+All three hostnames tested — `www.youtube.com`, `youtube.com`,
+`m.youtube.com` — fail identically at the CONNECT tunnel.
+
+The yt-dlp path was verified end to end offline against real format fixtures:
+flat-playlist entries through the bucket filter into a manifest and a Gate 1
+report, and a `json3` caption file into a `Transcript` whose citation anchor
+resolves to the correct segment at the correct timestamp. What has not been
+verified is anything requiring the live site — that the channel IDs are right,
+that the eight buckets have material in them, or how many videos exist.
+
+Run on any machine with normal network access:
+
+```bash
+python -m scripts.discover_ytdlp
+python -m scripts.ingest_ytdlp
+```
