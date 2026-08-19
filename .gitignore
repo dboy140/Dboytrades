@@ -14,3 +14,6 @@ data/transcripts/*
 # Large or regenerable intermediates
 *.tmp
 logs/*.log
+
+# Raw transcripts and quarantine stay local: personal research, not redistribution.
+data/quarantine/

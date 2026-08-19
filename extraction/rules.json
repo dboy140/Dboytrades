@@ -1,0 +1,483 @@
+[
+  {
+    "rule_id": "SB-001",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet",
+    "category": "entry_model",
+    "statement": "Trade the AM Silver Bullet only inside the 10:00-11:00 New York window.",
+    "preconditions": [
+      "Higher timeframe bias established",
+      "Index futures or FX majors"
+    ],
+    "trigger": "Clock enters 10:00 New York local time",
+    "entry": "Displacement then entry into the fair value gap left by that displacement, inside the window",
+    "stop_loss": "Beyond the extreme of the candle that produced the displacement",
+    "target": "Nearest opposing liquidity pool (relative equal highs or lows)",
+    "invalidation": "Window closes at 11:00 without a qualifying displacement and gap",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "NY AM",
+    "time_window": {
+      "ny": "10:00-11:00",
+      "london": "15:00-16:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices",
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "fXVJnBVizYY",
+        "title": "ICT Mentorship 2023 - Algorithmic Price Delivery & Time Macros Intro",
+        "published": null,
+        "timestamp": "00:26:53",
+        "link": "https://youtu.be/fXVJnBVizYY?t=1613"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "cgsltOB736E",
+        "title": "ICT Mentorship 2023 - ICT Reaper PD Array Introduction & Market Review",
+        "published": null,
+        "timestamp": "00:28:35",
+        "link": "https://youtu.be/cgsltOB736E?t=1715"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "AKg_r0DIa3k",
+        "title": "ICT Mentorship 2023 Market Review - July 09, 2023",
+        "published": "2023-07-09",
+        "timestamp": "00:35:06",
+        "link": "https://youtu.be/AKg_r0DIa3k?t=2106"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "CcNOk_3O5wk",
+        "title": "ICT Mentorship 2023 - September 14, 2023 Market Review",
+        "published": "2023-09-14",
+        "timestamp": "00:09:01",
+        "link": "https://youtu.be/CcNOk_3O5wk?t=541"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "fXVJnBVizYY",
+        "title": "ICT Mentorship 2023 - Algorithmic Price Delivery & Time Macros Intro",
+        "published": null,
+        "timestamp": "00:24:10",
+        "link": "https://youtu.be/fXVJnBVizYY?t=1450"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 5,
+    "contradicts": [
+      "SB-010"
+    ],
+    "notes": "Stated repeatedly and demonstrated on charts. Times are New York local, so they shift against UK clocks twice a year - see the DST table in the system doc."
+  },
+  {
+    "rule_id": "SB-002",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet",
+    "category": "entry_model",
+    "statement": "Trade the PM Silver Bullet inside the 14:00-15:00 New York window, with the idea still valid until the 16:00 close.",
+    "preconditions": [
+      "Higher timeframe bias established",
+      "Index futures"
+    ],
+    "trigger": "Clock enters 14:00 New York local time",
+    "entry": "Fair value gap formed within the window, in the direction of the prevailing order flow",
+    "stop_loss": "Beyond the extreme of the candle that produced the displacement",
+    "target": "Nearest opposing liquidity pool",
+    "invalidation": "16:00 New York cash close",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "NY PM",
+    "time_window": {
+      "ny": "14:00-15:00",
+      "london": "19:00-20:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "wTR-vhOdMgo",
+        "title": "ICT Mentorship 2023 - T.G.I.F. Setup",
+        "published": null,
+        "timestamp": "00:42:06",
+        "link": "https://youtu.be/wTR-vhOdMgo?t=2526"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "wTR-vhOdMgo",
+        "title": "ICT Mentorship 2023 - T.G.I.F. Setup",
+        "published": null,
+        "timestamp": "00:14:11",
+        "link": "https://youtu.be/wTR-vhOdMgo?t=851"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "wTR-vhOdMgo",
+        "title": "ICT Mentorship 2023 - T.G.I.F. Setup",
+        "published": null,
+        "timestamp": "00:43:15",
+        "link": "https://youtu.be/wTR-vhOdMgo?t=2595"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "vuBRMFhFZAY",
+        "title": "ICT Mentorship 2023 - One Trading Setup For Life",
+        "published": null,
+        "timestamp": "00:45:28",
+        "link": "https://youtu.be/vuBRMFhFZAY?t=2728"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 4,
+    "contradicts": [],
+    "notes": "Explicitly 'two o'clock to three o'clock in the afternoon on index futures'. Opportunity persists to the 16:00 bell."
+  },
+  {
+    "rule_id": "SB-003",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet",
+    "category": "entry_mechanic",
+    "statement": "Enter on displacement into a fair value gap; buy the closed candle as price trades down into it.",
+    "preconditions": [
+      "Inside a Silver Bullet window"
+    ],
+    "trigger": "Displacement candle closes, leaving a fair value gap",
+    "entry": "Into the fair value gap left by the displacement",
+    "stop_loss": "Below the low of the entry candle",
+    "target": "Relative equal highs or lows",
+    "invalidation": "Price closes through the far side of the gap",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "indices",
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "cgsltOB736E",
+        "title": "ICT Mentorship 2023 - ICT Reaper PD Array Introduction & Market Review",
+        "published": null,
+        "timestamp": "00:28:35",
+        "link": "https://youtu.be/cgsltOB736E?t=1715"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "AKg_r0DIa3k",
+        "title": "ICT Mentorship 2023 Market Review - July 09, 2023",
+        "published": "2023-07-09",
+        "timestamp": "00:35:06",
+        "link": "https://youtu.be/AKg_r0DIa3k?t=2106"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Stop placement quoted directly: 'my stop loss is below this candle is low right there'."
+  },
+  {
+    "rule_id": "SB-004",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet",
+    "category": "management",
+    "statement": "Target the nearest opposing liquidity and take the trade off there rather than holding for extension.",
+    "preconditions": [
+      "Silver Bullet entry taken"
+    ],
+    "trigger": "Price reaches the identified relative equal highs or lows",
+    "entry": "n/a",
+    "stop_loss": "n/a",
+    "target": "Relative equal highs or lows nearest the entry",
+    "invalidation": "n/a",
+    "timeframes": {
+      "htf": null,
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "AKg_r0DIa3k",
+        "title": "ICT Mentorship 2023 Market Review - July 09, 2023",
+        "published": "2023-07-09",
+        "timestamp": "00:35:06",
+        "link": "https://youtu.be/AKg_r0DIa3k?t=2106"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "'buying here and getting out there just at that high, that's enough for a trade' - explicit, but stated once."
+  },
+  {
+    "rule_id": "SB-005",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet",
+    "category": "psychology",
+    "statement": "A missed entry inside the window is not a missed day; the window usually offers several qualifying entries.",
+    "preconditions": [
+      "Inside a Silver Bullet window"
+    ],
+    "trigger": "First entry missed",
+    "entry": "The next qualifying fair value gap inside the same window",
+    "stop_loss": "As per the entry taken",
+    "target": "As per the entry taken",
+    "invalidation": "Window closes",
+    "timeframes": {
+      "htf": null,
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "wTR-vhOdMgo",
+        "title": "ICT Mentorship 2023 - T.G.I.F. Setup",
+        "published": null,
+        "timestamp": "00:43:15",
+        "link": "https://youtu.be/wTR-vhOdMgo?t=2595"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "CcNOk_3O5wk",
+        "title": "ICT Mentorship 2023 - September 14, 2023 Market Review",
+        "published": "2023-09-14",
+        "timestamp": "00:09:01",
+        "link": "https://youtu.be/CcNOk_3O5wk?t=541"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Directly counters chasing: 'if you missed this one you could have done this one'."
+  },
+  {
+    "rule_id": "SB-006",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet",
+    "category": "liquidity",
+    "statement": "On scheduled-news days widen the window to 10:00-12:00 rather than holding to a strict 10:00-11:00.",
+    "preconditions": [
+      "Scheduled economic release affecting the instrument"
+    ],
+    "trigger": "News event known in advance for that instrument",
+    "entry": "As per the standard model, over the widened window",
+    "stop_loss": "As per the standard model",
+    "target": "As per the standard model",
+    "invalidation": "12:00 New York",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "NY AM",
+    "time_window": {
+      "ny": "10:00-12:00",
+      "london": "15:00-17:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "koN1ge8bewI",
+        "title": "2022 ICT Mentorship Episode 40",
+        "published": null,
+        "timestamp": "00:17:47",
+        "link": "https://youtu.be/koN1ge8bewI?t=1067"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Given for CAD around crude inventories; the principle is stated generally but demonstrated on one instrument."
+  },
+  {
+    "rule_id": "SB-007",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet",
+    "category": "bias",
+    "statement": "The 13:30 New York lunch macro sets the tone for the 14:00-15:00 PM Silver Bullet; read it before taking the PM window.",
+    "preconditions": [
+      "Trading the PM session"
+    ],
+    "trigger": "13:30 New York macro completes",
+    "entry": "n/a",
+    "stop_loss": "n/a",
+    "target": "n/a",
+    "invalidation": "n/a",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "NY Lunch",
+    "time_window": {
+      "ny": "13:30-14:00",
+      "london": "18:30-19:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "vuBRMFhFZAY",
+        "title": "ICT Mentorship 2023 - One Trading Setup For Life",
+        "published": null,
+        "timestamp": "00:45:28",
+        "link": "https://youtu.be/vuBRMFhFZAY?t=2728"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "'a macro that begins at 1:30 that sets the tone and pace for the 2 o'clock to 3:00 Silver Bullet'."
+  },
+  {
+    "rule_id": "SB-008",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet",
+    "category": "entry_model",
+    "statement": "SMT divergence between correlated indices plus a market structure shift strengthens a Silver Bullet entry.",
+    "preconditions": [
+      "Inside a Silver Bullet window",
+      "Two correlated instruments on screen"
+    ],
+    "trigger": "One index makes a higher low while the other makes a lower low, then structure shifts",
+    "entry": "Fair value gap created by the structure shift",
+    "stop_loss": "Beyond the divergent low or high",
+    "target": "Opposing liquidity",
+    "invalidation": "Divergence resolves without a structure shift",
+    "timeframes": {
+      "htf": "15m",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "NY AM",
+    "time_window": {
+      "ny": "10:00-11:00",
+      "london": "15:00-16:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [
+      "SMT divergence",
+      "market structure shift"
+    ],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "CcNOk_3O5wk",
+        "title": "ICT Mentorship 2023 - September 14, 2023 Market Review",
+        "published": "2023-09-14",
+        "timestamp": "00:09:01",
+        "link": "https://youtu.be/CcNOk_3O5wk?t=541"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Matches the operator's existing SMT confirmation step."
+  },
+  {
+    "rule_id": "SB-010",
+    "topic_bucket": "silver_bullet",
+    "concept": "Silver Bullet (NBB variant)",
+    "category": "entry_model",
+    "statement": "NBB trades his own Silver Bullet windows on FX: 03:00-04:00 for London and 08:00-09:00 for New York.",
+    "preconditions": [
+      "Trading EURUSD or GBPUSD"
+    ],
+    "trigger": "Clock enters the stated window",
+    "entry": "As per his market maker model within the window",
+    "stop_loss": "Not stated in this passage",
+    "target": "Not stated in this passage",
+    "invalidation": "Window closes",
+    "timeframes": {
+      "htf": null,
+      "mtf": null,
+      "ltf": null
+    },
+    "session": "London",
+    "time_window": {
+      "ny": "03:00-04:00 and 08:00-09:00",
+      "london": "08:00-09:00 and 13:00-14:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "EURUSD",
+      "GBPUSD"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "NBBTRADER",
+        "video_id": "9j1jttkm4s8",
+        "title": "ICT Roundtable: NBB Trader, JadeCapFX, Ali khan ICT, Kimmel Trading | WOR Podcast",
+        "published": null,
+        "timestamp": "00:34:04",
+        "link": "https://youtu.be/9j1jttkm4s8?t=2044"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [
+      "SB-001"
+    ],
+    "notes": "CONFLICTS WITH SB-001. NBB uses different hours on FX than ICT teaches for index futures. Likely instrument-driven rather than a genuine disagreement, but unresolved - see CONFLICTS.md."
+  }
+]
