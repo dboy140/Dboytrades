@@ -17,3 +17,6 @@ logs/*.log
 
 # Raw transcripts and quarantine stay local: personal research, not redistribution.
 data/quarantine/
+
+# Price data: large, licensed, and yours to supply.
+data/bars/
