@@ -1,0 +1,33 @@
+{
+  "note": "Prerequisite ordering derived from the extracted rules. An edge means the source concept must be settled before the target can be evaluated.",
+  "nodes": [
+    {"id": "weekly_expansion", "label": "Weekly expansion", "rules": ["HTF-003", "HTF-006"], "layer": 1},
+    {"id": "htf_bias", "label": "Higher timeframe bias", "rules": ["HTF-001", "HTF-002", "HTF-004", "HTF-005", "HTF-007"], "layer": 2},
+    {"id": "institutional_order_flow", "label": "Institutional order flow", "rules": ["SMC-005", "MM-009"], "layer": 2},
+    {"id": "draw_on_liquidity", "label": "Draw on liquidity", "rules": ["HTF-001", "MM-004", "SMC-007"], "layer": 3},
+    {"id": "premium_discount", "label": "Premium / discount", "rules": ["SMC-003", "SMC-004", "HTF-002"], "layer": 3},
+    {"id": "resistance_classification", "label": "Low vs high resistance run", "rules": ["MM-006", "MM-007"], "layer": 4},
+    {"id": "session_timing", "label": "Session timing", "rules": ["LDN-001", "LDN-003", "NY-001", "NY-002", "NY-004", "NY-005", "SB-001", "SB-002"], "layer": 4},
+    {"id": "judas_swing", "label": "Judas swing", "rules": ["LDN-004", "SMC-006"], "layer": 5},
+    {"id": "market_structure_shift", "label": "Market structure shift", "rules": ["SMC-001", "SMC-002"], "layer": 5},
+    {"id": "pd_array", "label": "PD array (FVG / IFVG / OB)", "rules": ["FVG-001", "FVG-002", "FVG-003", "IFVG-001", "IFVG-004", "IFVG-006"], "layer": 6},
+    {"id": "entry", "label": "Entry", "rules": ["SB-003", "FVG-002", "FVG-005", "IFVG-002", "IFVG-003", "IFVG-005"], "layer": 7},
+    {"id": "management", "label": "Target and management", "rules": ["SB-004", "SMC-003", "MM-004"], "layer": 8}
+  ],
+  "edges": [
+    {"from": "weekly_expansion", "to": "htf_bias"},
+    {"from": "htf_bias", "to": "institutional_order_flow"},
+    {"from": "htf_bias", "to": "draw_on_liquidity"},
+    {"from": "institutional_order_flow", "to": "draw_on_liquidity"},
+    {"from": "htf_bias", "to": "premium_discount"},
+    {"from": "draw_on_liquidity", "to": "resistance_classification"},
+    {"from": "premium_discount", "to": "resistance_classification"},
+    {"from": "resistance_classification", "to": "session_timing"},
+    {"from": "session_timing", "to": "judas_swing"},
+    {"from": "session_timing", "to": "market_structure_shift"},
+    {"from": "judas_swing", "to": "market_structure_shift"},
+    {"from": "market_structure_shift", "to": "pd_array"},
+    {"from": "pd_array", "to": "entry"},
+    {"from": "entry", "to": "management"}
+  ]
+}

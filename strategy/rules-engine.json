@@ -1,0 +1,993 @@
+{
+  "version": "1.0",
+  "generated_from": "extraction/rules.json",
+  "operator": {
+    "handle": "DboyTrades",
+    "base_timezone": "Europe/London",
+    "instruments": [
+      "XAUUSD",
+      "EURUSD",
+      "GBPUSD",
+      "NAS100"
+    ]
+  },
+  "note": "Evaluate phases in evaluation_order. Any phase returning false aborts the candidate. All times are New York local; the engine must resolve them with a real tz database (America/New_York), never a fixed UTC offset - US and UK DST dates differ by about four weeks a year.",
+  "evaluation_order": [
+    "no_trade_filters",
+    "htf_bias",
+    "draw_on_liquidity",
+    "resistance_classification",
+    "session_window",
+    "setup_pattern",
+    "entry_trigger",
+    "risk_sizing"
+  ],
+  "facts_required": [
+    {
+      "fact": "weekly.expansion_remaining",
+      "type": "bool",
+      "note": "Is the week's extreme already in?"
+    },
+    {
+      "fact": "daily.unswept_buyside",
+      "type": "price[]"
+    },
+    {
+      "fact": "daily.unswept_sellside",
+      "type": "price[]"
+    },
+    {
+      "fact": "range.equilibrium",
+      "type": "price",
+      "note": "50% of the active dealing range"
+    },
+    {
+      "fact": "price.premium_discount",
+      "type": "enum[premium,discount,equilibrium]"
+    },
+    {
+      "fact": "htf.institutional_order_flow",
+      "type": "enum[bullish,bearish,neutral]"
+    },
+    {
+      "fact": "liquidity.opposing_pool_between_entry_and_target",
+      "type": "bool"
+    },
+    {
+      "fact": "session.ny_time",
+      "type": "time",
+      "note": "America/New_York, DST-aware"
+    },
+    {
+      "fact": "asian_range.pips",
+      "type": "number"
+    },
+    {
+      "fact": "structure.shift_confirmed",
+      "type": "bool"
+    },
+    {
+      "fact": "fvg.present",
+      "type": "bool"
+    },
+    {
+      "fact": "fvg.inverted",
+      "type": "bool"
+    },
+    {
+      "fact": "fvg.consequent_encroachment",
+      "type": "price"
+    },
+    {
+      "fact": "displacement.candle_extreme",
+      "type": "price"
+    },
+    {
+      "fact": "smt.divergence",
+      "type": "bool"
+    },
+    {
+      "fact": "ote.level_62",
+      "type": "price"
+    },
+    {
+      "fact": "mmxm.smart_money_reversal",
+      "type": "bool"
+    },
+    {
+      "fact": "mmxm.original_consolidation",
+      "type": "price"
+    },
+    {
+      "fact": "mmxm.second_stage_distribution",
+      "type": "bool"
+    },
+    {
+      "fact": "weekday",
+      "type": "enum[mon,tue,wed,thu,fri]"
+    }
+  ],
+  "phases": {
+    "no_trade_filters": {
+      "abort_if_any_true": [
+        {
+          "id": "NT-01",
+          "when": {
+            "fact": "liquidity.opposing_pool_between_entry_and_target",
+            "op": "eq",
+            "value": true
+          },
+          "reason": "High resistance liquidity run",
+          "citations": [
+            {
+              "rule_id": "MM-006",
+              "video_id": "sfRO5LrTgTA",
+              "timestamp": "00:06:37",
+              "link": "https://youtu.be/sfRO5LrTgTA?t=397"
+            },
+            {
+              "rule_id": "MM-006",
+              "video_id": "npL3ZXJ5zOU",
+              "timestamp": "00:12:36",
+              "link": "https://youtu.be/npL3ZXJ5zOU?t=756"
+            },
+            {
+              "rule_id": "MM-006",
+              "video_id": "npL3ZXJ5zOU",
+              "timestamp": "00:30:48",
+              "link": "https://youtu.be/npL3ZXJ5zOU?t=1848"
+            }
+          ]
+        },
+        {
+          "id": "NT-02",
+          "when": {
+            "fact": "asian_range.pips",
+            "op": "gt",
+            "value": 30
+          },
+          "applies_to": [
+            "EURUSD",
+            "GBPUSD"
+          ],
+          "session": "London",
+          "reason": "Asian range failed to consolidate",
+          "citations": [
+            {
+              "rule_id": "LDN-005",
+              "video_id": "eU8WcUftUtY",
+              "timestamp": "00:05:00",
+              "link": "https://youtu.be/eU8WcUftUtY?t=300"
+            }
+          ]
+        },
+        {
+          "id": "NT-03",
+          "when": {
+            "fact": "htf.institutional_order_flow",
+            "op": "neq",
+            "value": "$candidate_direction"
+          },
+          "reason": "Setup opposes higher timeframe order flow",
+          "citations": [
+            {
+              "rule_id": "SMC-005",
+              "video_id": "cqf8nH54bb8",
+              "timestamp": "00:55:02",
+              "link": "https://youtu.be/cqf8nH54bb8?t=3302"
+            }
+          ]
+        },
+        {
+          "id": "NT-04",
+          "when": {
+            "fact": "weekly.expansion_remaining",
+            "op": "eq",
+            "value": false
+          },
+          "reason": "Week's expansion already delivered",
+          "citations": [
+            {
+              "rule_id": "HTF-003",
+              "video_id": "koN1ge8bewI",
+              "timestamp": "00:20:54",
+              "link": "https://youtu.be/koN1ge8bewI?t=1254"
+            }
+          ]
+        }
+      ]
+    },
+    "htf_bias": {
+      "produces": "bias",
+      "steps": [
+        {
+          "id": "HB-01",
+          "description": "Mark weekly range; is expansion likely?",
+          "citations": [
+            {
+              "rule_id": "HTF-003",
+              "video_id": "koN1ge8bewI",
+              "timestamp": "00:20:54",
+              "link": "https://youtu.be/koN1ge8bewI?t=1254"
+            },
+            {
+              "rule_id": "HTF-006",
+              "video_id": "-cXnnHjy9s0",
+              "timestamp": "00:39:11",
+              "link": "https://youtu.be/-cXnnHjy9s0?t=2351"
+            }
+          ]
+        },
+        {
+          "id": "HB-02",
+          "description": "Mark unswept daily buyside and sellside pools",
+          "citations": [
+            {
+              "rule_id": "HTF-001",
+              "video_id": "BkmZgjuYREU",
+              "timestamp": "00:22:55",
+              "link": "https://youtu.be/BkmZgjuYREU?t=1375"
+            }
+          ]
+        },
+        {
+          "id": "HB-03",
+          "description": "Larger unswept pool is the draw",
+          "citations": [
+            {
+              "rule_id": "HTF-001",
+              "video_id": "BkmZgjuYREU",
+              "timestamp": "00:22:55",
+              "link": "https://youtu.be/BkmZgjuYREU?t=1375"
+            }
+          ]
+        },
+        {
+          "id": "HB-04",
+          "description": "Premium or discount of the daily dealing range",
+          "citations": [
+            {
+              "rule_id": "HTF-002",
+              "video_id": "g7jchu4g31c",
+              "timestamp": "00:20:02",
+              "link": "https://youtu.be/g7jchu4g31c?t=1202"
+            }
+          ]
+        },
+        {
+          "id": "HB-05",
+          "description": "Transpose HTF arrays down; keep unmitigated only",
+          "citations": [
+            {
+              "rule_id": "HTF-004",
+              "video_id": "g--tikwaupk",
+              "timestamp": "00:20:49",
+              "link": "https://youtu.be/g--tikwaupk?t=1249"
+            }
+          ]
+        }
+      ],
+      "output_null_if": "steps 3-5 disagree",
+      "commitment": {
+        "note": "Do not flip intraday",
+        "citations": [
+          {
+            "rule_id": "HTF-005",
+            "video_id": "xGFCIUFxsbw",
+            "timestamp": "00:32:42",
+            "link": "https://youtu.be/xGFCIUFxsbw?t=1962"
+          }
+        ]
+      }
+    },
+    "draw_on_liquidity": {
+      "candidates": [
+        {
+          "id": "DR-01",
+          "target": "nearest unswept opposing pool",
+          "citations": [
+            {
+              "rule_id": "HTF-001",
+              "video_id": "BkmZgjuYREU",
+              "timestamp": "00:22:55",
+              "link": "https://youtu.be/BkmZgjuYREU?t=1375"
+            }
+          ]
+        },
+        {
+          "id": "DR-02",
+          "target": "range.equilibrium",
+          "citations": [
+            {
+              "rule_id": "SMC-003",
+              "video_id": "Y1oxwc354oo",
+              "timestamp": "00:03:54",
+              "link": "https://youtu.be/Y1oxwc354oo?t=234"
+            }
+          ]
+        },
+        {
+          "id": "DR-03",
+          "target": "mmxm.original_consolidation",
+          "citations": [
+            {
+              "rule_id": "MM-004",
+              "video_id": "i8xt0EQDjNY",
+              "timestamp": "00:15:59",
+              "link": "https://youtu.be/i8xt0EQDjNY?t=959"
+            },
+            {
+              "rule_id": "MM-004",
+              "video_id": "ojy5ApHhEu4",
+              "timestamp": "01:27:42",
+              "link": "https://youtu.be/ojy5ApHhEu4?t=5262"
+            }
+          ]
+        },
+        {
+          "id": "DR-04",
+          "target": "first prominent liquidity pool after 10:00 NY",
+          "session": "NY Lunch",
+          "citations": [
+            {
+              "rule_id": "SMC-007",
+              "video_id": "dA2CHAN1DzY",
+              "timestamp": "00:15:45",
+              "link": "https://youtu.be/dA2CHAN1DzY?t=945"
+            },
+            {
+              "rule_id": "SMC-007",
+              "video_id": "dA2CHAN1DzY",
+              "timestamp": "00:08:28",
+              "link": "https://youtu.be/dA2CHAN1DzY?t=508"
+            }
+          ]
+        }
+      ]
+    },
+    "resistance_classification": {
+      "require": {
+        "fact": "liquidity.opposing_pool_between_entry_and_target",
+        "op": "eq",
+        "value": false
+      },
+      "citations": [
+        {
+          "rule_id": "MM-006",
+          "video_id": "sfRO5LrTgTA",
+          "timestamp": "00:06:37",
+          "link": "https://youtu.be/sfRO5LrTgTA?t=397"
+        },
+        {
+          "rule_id": "MM-006",
+          "video_id": "npL3ZXJ5zOU",
+          "timestamp": "00:12:36",
+          "link": "https://youtu.be/npL3ZXJ5zOU?t=756"
+        },
+        {
+          "rule_id": "MM-006",
+          "video_id": "npL3ZXJ5zOU",
+          "timestamp": "00:30:48",
+          "link": "https://youtu.be/npL3ZXJ5zOU?t=1848"
+        },
+        {
+          "rule_id": "MM-007",
+          "video_id": "npL3ZXJ5zOU",
+          "timestamp": "00:33:57",
+          "link": "https://youtu.be/npL3ZXJ5zOU?t=2037"
+        }
+      ]
+    },
+    "session_window": {
+      "windows": [
+        {
+          "id": "W-LDN",
+          "ny": "02:00-05:00",
+          "instruments": [
+            "EURUSD",
+            "GBPUSD",
+            "XAUUSD"
+          ],
+          "citations": [
+            {
+              "rule_id": "LDN-001",
+              "video_id": "cxdjcXec3eA",
+              "timestamp": "00:04:43",
+              "link": "https://youtu.be/cxdjcXec3eA?t=283"
+            },
+            {
+              "rule_id": "LDN-001",
+              "video_id": "9_qyz3TNcJU",
+              "timestamp": "00:33:06",
+              "link": "https://youtu.be/9_qyz3TNcJU?t=1986"
+            }
+          ]
+        },
+        {
+          "id": "W-NYKZ",
+          "ny": "07:00-09:00",
+          "instruments": [
+            "EURUSD",
+            "GBPUSD",
+            "XAUUSD"
+          ],
+          "citations": [
+            {
+              "rule_id": "NY-001",
+              "video_id": "9_qyz3TNcJU",
+              "timestamp": "00:33:06",
+              "link": "https://youtu.be/9_qyz3TNcJU?t=1986"
+            },
+            {
+              "rule_id": "NY-001",
+              "video_id": "cxdjcXec3eA",
+              "timestamp": "00:04:43",
+              "link": "https://youtu.be/cxdjcXec3eA?t=283"
+            }
+          ]
+        },
+        {
+          "id": "W-SB-AM",
+          "ny": "10:00-11:00",
+          "instruments": [
+            "NAS100"
+          ],
+          "citations": [
+            {
+              "rule_id": "SB-001",
+              "video_id": "fXVJnBVizYY",
+              "timestamp": "00:26:53",
+              "link": "https://youtu.be/fXVJnBVizYY?t=1613"
+            },
+            {
+              "rule_id": "SB-001",
+              "video_id": "cgsltOB736E",
+              "timestamp": "00:28:35",
+              "link": "https://youtu.be/cgsltOB736E?t=1715"
+            },
+            {
+              "rule_id": "SB-001",
+              "video_id": "AKg_r0DIa3k",
+              "timestamp": "00:35:06",
+              "link": "https://youtu.be/AKg_r0DIa3k?t=2106"
+            },
+            {
+              "rule_id": "SB-001",
+              "video_id": "CcNOk_3O5wk",
+              "timestamp": "00:09:01",
+              "link": "https://youtu.be/CcNOk_3O5wk?t=541"
+            },
+            {
+              "rule_id": "SB-001",
+              "video_id": "fXVJnBVizYY",
+              "timestamp": "00:24:10",
+              "link": "https://youtu.be/fXVJnBVizYY?t=1450"
+            }
+          ]
+        },
+        {
+          "id": "W-SB-PM",
+          "ny": "14:00-15:00",
+          "instruments": [
+            "NAS100"
+          ],
+          "citations": [
+            {
+              "rule_id": "SB-002",
+              "video_id": "wTR-vhOdMgo",
+              "timestamp": "00:42:06",
+              "link": "https://youtu.be/wTR-vhOdMgo?t=2526"
+            },
+            {
+              "rule_id": "SB-002",
+              "video_id": "wTR-vhOdMgo",
+              "timestamp": "00:14:11",
+              "link": "https://youtu.be/wTR-vhOdMgo?t=851"
+            },
+            {
+              "rule_id": "SB-002",
+              "video_id": "wTR-vhOdMgo",
+              "timestamp": "00:43:15",
+              "link": "https://youtu.be/wTR-vhOdMgo?t=2595"
+            },
+            {
+              "rule_id": "SB-002",
+              "video_id": "vuBRMFhFZAY",
+              "timestamp": "00:45:28",
+              "link": "https://youtu.be/vuBRMFhFZAY?t=2728"
+            }
+          ]
+        },
+        {
+          "id": "W-SB-NBB-LDN",
+          "ny": "03:00-04:00",
+          "instruments": [
+            "EURUSD",
+            "GBPUSD"
+          ],
+          "citations": [
+            {
+              "rule_id": "SB-010",
+              "video_id": "9j1jttkm4s8",
+              "timestamp": "00:34:04",
+              "link": "https://youtu.be/9j1jttkm4s8?t=2044"
+            }
+          ]
+        },
+        {
+          "id": "W-SB-NBB-NY",
+          "ny": "08:00-09:00",
+          "instruments": [
+            "EURUSD",
+            "GBPUSD"
+          ],
+          "citations": [
+            {
+              "rule_id": "SB-010",
+              "video_id": "9j1jttkm4s8",
+              "timestamp": "00:34:04",
+              "link": "https://youtu.be/9j1jttkm4s8?t=2044"
+            }
+          ]
+        },
+        {
+          "id": "W-LUNCH",
+          "ny": "12:00-13:30",
+          "instruments": [
+            "NAS100"
+          ],
+          "citations": [
+            {
+              "rule_id": "SMC-007",
+              "video_id": "dA2CHAN1DzY",
+              "timestamp": "00:15:45",
+              "link": "https://youtu.be/dA2CHAN1DzY?t=945"
+            },
+            {
+              "rule_id": "SMC-007",
+              "video_id": "dA2CHAN1DzY",
+              "timestamp": "00:08:28",
+              "link": "https://youtu.be/dA2CHAN1DzY?t=508"
+            }
+          ]
+        }
+      ],
+      "news_widening": {
+        "id": "W-NEWS",
+        "ny": "10:00-12:00",
+        "when": "scheduled release for the instrument",
+        "citations": [
+          {
+            "rule_id": "SB-006",
+            "video_id": "koN1ge8bewI",
+            "timestamp": "00:17:47",
+            "link": "https://youtu.be/koN1ge8bewI?t=1067"
+          }
+        ]
+      }
+    },
+    "setup_pattern": {
+      "setups": [
+        {
+          "setup": "Silver Bullet",
+          "tier": "A",
+          "journal_name": "Silver Bullet",
+          "when": [
+            {
+              "fact": "session.ny_time",
+              "op": "in_window",
+              "value": [
+                "10:00-11:00",
+                "14:00-15:00"
+              ]
+            },
+            {
+              "fact": "fvg.present",
+              "op": "eq",
+              "value": true
+            },
+            {
+              "fact": "displacement.candle_extreme",
+              "op": "exists",
+              "value": true
+            }
+          ],
+          "entry": {
+            "at": "fvg",
+            "note": "into the displacement gap"
+          },
+          "stop": {
+            "at": "displacement.candle_extreme",
+            "offset": "beyond"
+          },
+          "target": {
+            "at": "nearest opposing liquidity"
+          },
+          "invalidation": "window closes without qualifying displacement, or close through the gap",
+          "optional_confluence": [
+            {
+              "fact": "smt.divergence",
+              "op": "eq",
+              "value": true,
+              "citations": [
+                {
+                  "rule_id": "SB-008",
+                  "video_id": "CcNOk_3O5wk",
+                  "timestamp": "00:09:01",
+                  "link": "https://youtu.be/CcNOk_3O5wk?t=541"
+                }
+              ]
+            }
+          ],
+          "citations": [
+            {
+              "rule_id": "SB-001",
+              "video_id": "fXVJnBVizYY",
+              "timestamp": "00:26:53",
+              "link": "https://youtu.be/fXVJnBVizYY?t=1613"
+            },
+            {
+              "rule_id": "SB-001",
+              "video_id": "cgsltOB736E",
+              "timestamp": "00:28:35",
+              "link": "https://youtu.be/cgsltOB736E?t=1715"
+            },
+            {
+              "rule_id": "SB-001",
+              "video_id": "AKg_r0DIa3k",
+              "timestamp": "00:35:06",
+              "link": "https://youtu.be/AKg_r0DIa3k?t=2106"
+            },
+            {
+              "rule_id": "SB-001",
+              "video_id": "CcNOk_3O5wk",
+              "timestamp": "00:09:01",
+              "link": "https://youtu.be/CcNOk_3O5wk?t=541"
+            },
+            {
+              "rule_id": "SB-001",
+              "video_id": "fXVJnBVizYY",
+              "timestamp": "00:24:10",
+              "link": "https://youtu.be/fXVJnBVizYY?t=1450"
+            },
+            {
+              "rule_id": "SB-002",
+              "video_id": "wTR-vhOdMgo",
+              "timestamp": "00:42:06",
+              "link": "https://youtu.be/wTR-vhOdMgo?t=2526"
+            },
+            {
+              "rule_id": "SB-002",
+              "video_id": "wTR-vhOdMgo",
+              "timestamp": "00:14:11",
+              "link": "https://youtu.be/wTR-vhOdMgo?t=851"
+            },
+            {
+              "rule_id": "SB-002",
+              "video_id": "wTR-vhOdMgo",
+              "timestamp": "00:43:15",
+              "link": "https://youtu.be/wTR-vhOdMgo?t=2595"
+            },
+            {
+              "rule_id": "SB-002",
+              "video_id": "vuBRMFhFZAY",
+              "timestamp": "00:45:28",
+              "link": "https://youtu.be/vuBRMFhFZAY?t=2728"
+            },
+            {
+              "rule_id": "SB-003",
+              "video_id": "cgsltOB736E",
+              "timestamp": "00:28:35",
+              "link": "https://youtu.be/cgsltOB736E?t=1715"
+            },
+            {
+              "rule_id": "SB-003",
+              "video_id": "AKg_r0DIa3k",
+              "timestamp": "00:35:06",
+              "link": "https://youtu.be/AKg_r0DIa3k?t=2106"
+            },
+            {
+              "rule_id": "SB-004",
+              "video_id": "AKg_r0DIa3k",
+              "timestamp": "00:35:06",
+              "link": "https://youtu.be/AKg_r0DIa3k?t=2106"
+            }
+          ]
+        },
+        {
+          "setup": "MMBM",
+          "tier": "A",
+          "journal_name": "MMBM",
+          "when": [
+            {
+              "fact": "htf.institutional_order_flow",
+              "op": "eq",
+              "value": "bullish"
+            },
+            {
+              "fact": "mmxm.smart_money_reversal",
+              "op": "eq",
+              "value": true
+            }
+          ],
+          "entry": {
+            "at": "smart money reversal",
+            "note": "add at each reaccumulation"
+          },
+          "stop": {
+            "at": "smart money reversal low",
+            "offset": "below"
+          },
+          "target": {
+            "at": "mmxm.original_consolidation",
+            "note": "buy stops above its relative equal high"
+          },
+          "invalidation": "loses the reversal low, or returns to original consolidation and lingers",
+          "citations": [
+            {
+              "rule_id": "MM-001",
+              "video_id": "ojy5ApHhEu4",
+              "timestamp": "01:27:42",
+              "link": "https://youtu.be/ojy5ApHhEu4?t=5262"
+            },
+            {
+              "rule_id": "MM-001",
+              "video_id": "Cg0-CFJOJvg",
+              "timestamp": "00:28:57",
+              "link": "https://youtu.be/Cg0-CFJOJvg?t=1737"
+            },
+            {
+              "rule_id": "MM-001",
+              "video_id": "Cg0-CFJOJvg",
+              "timestamp": "00:33:38",
+              "link": "https://youtu.be/Cg0-CFJOJvg?t=2018"
+            },
+            {
+              "rule_id": "MM-004",
+              "video_id": "i8xt0EQDjNY",
+              "timestamp": "00:15:59",
+              "link": "https://youtu.be/i8xt0EQDjNY?t=959"
+            },
+            {
+              "rule_id": "MM-004",
+              "video_id": "ojy5ApHhEu4",
+              "timestamp": "01:27:42",
+              "link": "https://youtu.be/ojy5ApHhEu4?t=5262"
+            },
+            {
+              "rule_id": "MM-005",
+              "video_id": "i8xt0EQDjNY",
+              "timestamp": "00:09:46",
+              "link": "https://youtu.be/i8xt0EQDjNY?t=586"
+            },
+            {
+              "rule_id": "MM-008",
+              "video_id": "i8xt0EQDjNY",
+              "timestamp": "00:22:13",
+              "link": "https://youtu.be/i8xt0EQDjNY?t=1333"
+            }
+          ]
+        },
+        {
+          "setup": "MMSM",
+          "tier": "A",
+          "journal_name": "MMSM",
+          "when": [
+            {
+              "fact": "htf.institutional_order_flow",
+              "op": "eq",
+              "value": "bearish"
+            },
+            {
+              "fact": "mmxm.second_stage_distribution",
+              "op": "eq",
+              "value": true
+            }
+          ],
+          "entry": {
+            "at": "reversal after reaccumulation"
+          },
+          "stop": {
+            "at": "reversal high",
+            "offset": "above"
+          },
+          "target": {
+            "at": "sellside liquidity below the range"
+          },
+          "invalidation": "no second stage forms - treat as reaccumulation",
+          "citations": [
+            {
+              "rule_id": "MM-002",
+              "video_id": "AKg_r0DIa3k",
+              "timestamp": "00:30:26",
+              "link": "https://youtu.be/AKg_r0DIa3k?t=1826"
+            },
+            {
+              "rule_id": "MM-010",
+              "video_id": "9j1jttkm4s8",
+              "timestamp": "00:40:03",
+              "link": "https://youtu.be/9j1jttkm4s8?t=2403"
+            }
+          ]
+        },
+        {
+          "setup": "LDN to New York OTE",
+          "tier": "B",
+          "journal_name": "LDN to New York OTE",
+          "when": [
+            {
+              "fact": "session.ny_time",
+              "op": "in_window",
+              "value": [
+                "02:00-05:00",
+                "07:00-09:00"
+              ]
+            },
+            {
+              "fact": "structure.shift_confirmed",
+              "op": "eq",
+              "value": true
+            }
+          ],
+          "entry": {
+            "at": "ote.level_62",
+            "note": "62% specifically; do not wait for 70.5 or 79"
+          },
+          "stop": {
+            "at": "fib origin swing",
+            "offset": "5 pips beyond",
+            "warning": "FX figure; does not transfer to NAS100 or XAUUSD"
+          },
+          "target": {
+            "at": "opposing end of dealing range"
+          },
+          "invalidation": "no structure shift, or outside killzone hours",
+          "citations": [
+            {
+              "rule_id": "OTE-001",
+              "video_id": "PrbvJ5Gzh4Q",
+              "timestamp": "00:06:14",
+              "link": "https://youtu.be/PrbvJ5Gzh4Q?t=374"
+            },
+            {
+              "rule_id": "OTE-001",
+              "video_id": "SiVmoeyOWZE",
+              "timestamp": "00:12:01",
+              "link": "https://youtu.be/SiVmoeyOWZE?t=721"
+            },
+            {
+              "rule_id": "OTE-001",
+              "video_id": "qC0LogyIk2I",
+              "timestamp": "00:41:07",
+              "link": "https://youtu.be/qC0LogyIk2I?t=2467"
+            },
+            {
+              "rule_id": "OTE-002",
+              "video_id": "PrbvJ5Gzh4Q",
+              "timestamp": "00:13:30",
+              "link": "https://youtu.be/PrbvJ5Gzh4Q?t=810"
+            },
+            {
+              "rule_id": "OTE-003",
+              "video_id": "2rFZwUaGxyY",
+              "timestamp": "00:20:20",
+              "link": "https://youtu.be/2rFZwUaGxyY?t=1220"
+            },
+            {
+              "rule_id": "OTE-003",
+              "video_id": "PrbvJ5Gzh4Q",
+              "timestamp": "00:13:30",
+              "link": "https://youtu.be/PrbvJ5Gzh4Q?t=810"
+            },
+            {
+              "rule_id": "OTE-004",
+              "video_id": "lL6maBEfjwU",
+              "timestamp": "00:23:08",
+              "link": "https://youtu.be/lL6maBEfjwU?t=1388"
+            }
+          ]
+        }
+      ]
+    },
+    "entry_trigger": {
+      "mechanics": [
+        {
+          "id": "ET-01",
+          "description": "Shallow FVG entry that never reaches consequent encroachment is valid",
+          "citations": [
+            {
+              "rule_id": "FVG-002",
+              "video_id": "ojy5ApHhEu4",
+              "timestamp": "00:30:33",
+              "link": "https://youtu.be/ojy5ApHhEu4?t=1833"
+            },
+            {
+              "rule_id": "FVG-002",
+              "video_id": "_NWG_eJRBpU",
+              "timestamp": "00:04:58",
+              "link": "https://youtu.be/_NWG_eJRBpU?t=298"
+            }
+          ]
+        },
+        {
+          "id": "ET-02",
+          "description": "IFVG confirmed by bodies respecting consequent encroachment, not wicks",
+          "citations": [
+            {
+              "rule_id": "IFVG-005",
+              "video_id": "C_0Jh7HwCUI",
+              "timestamp": "00:03:50",
+              "link": "https://youtu.be/C_0Jh7HwCUI?t=230"
+            },
+            {
+              "rule_id": "IFVG-005",
+              "video_id": "C_0Jh7HwCUI",
+              "timestamp": "00:00:38",
+              "link": "https://youtu.be/C_0Jh7HwCUI?t=38"
+            }
+          ]
+        },
+        {
+          "id": "ET-03",
+          "description": "MSS: sweep lows, then take the high preceding that low",
+          "citations": [
+            {
+              "rule_id": "SMC-001",
+              "video_id": "YFsn7BUMJ_s",
+              "timestamp": "00:20:17",
+              "link": "https://youtu.be/YFsn7BUMJ_s?t=1217"
+            }
+          ]
+        },
+        {
+          "id": "ET-04",
+          "description": "Multiple attempts per gap; a missed first touch is not a missed trade",
+          "citations": [
+            {
+              "rule_id": "FVG-005",
+              "video_id": "Bkt8B3kLATQ",
+              "timestamp": "00:28:25",
+              "link": "https://youtu.be/Bkt8B3kLATQ?t=1705"
+            },
+            {
+              "rule_id": "SB-005",
+              "video_id": "wTR-vhOdMgo",
+              "timestamp": "00:43:15",
+              "link": "https://youtu.be/wTR-vhOdMgo?t=2595"
+            },
+            {
+              "rule_id": "SB-005",
+              "video_id": "CcNOk_3O5wk",
+              "timestamp": "00:09:01",
+              "link": "https://youtu.be/CcNOk_3O5wk?t=541"
+            }
+          ]
+        }
+      ]
+    },
+    "risk_sizing": {
+      "UNSOURCED": true,
+      "warning": "Neither source states position sizing anywhere in this corpus. Every value here is an engineering default to be replaced by backtested numbers.",
+      "risk_pct": {
+        "A": 1.0,
+        "B": 0.5,
+        "C": 0.0
+      },
+      "max_daily_pct": 2.0,
+      "max_weekly_pct": 5.0,
+      "max_concurrent": 2,
+      "correlated_pairs": [
+        [
+          "NAS100",
+          "ES"
+        ],
+        [
+          "EURUSD",
+          "GBPUSD"
+        ]
+      ],
+      "formula": "size = (account * risk_pct/100) / (stop_distance * value_per_point)",
+      "rounding": "down"
+    }
+  }
+}

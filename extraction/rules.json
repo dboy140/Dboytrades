@@ -2889,5 +2889,207 @@
     "mentions": 1,
     "contradicts": [],
     "notes": "Relevant to sourcing: 'when you hear SMC it's my concepts'."
+  },
+  {
+    "rule_id": "OTE-001",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Optimal Trade Entry",
+    "category": "entry_model",
+    "statement": "Frame a fib across the dealing range (swing high to swing low); the optimal trade entry zone is the 62%, 70.5% and 79% retracement band, which is the deep discount in bullish conditions.",
+    "preconditions": [
+      "A dealing range defined by a clear swing high and low",
+      "Directional bias established"
+    ],
+    "trigger": "Price retraces into the 62-79% band",
+    "entry": "Within the OTE band",
+    "stop_loss": "Beyond the swing extreme the fib was drawn from",
+    "target": "The opposing end of the dealing range / liquidity beyond it",
+    "invalidation": "Price trades beyond the origin swing",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "PrbvJ5Gzh4Q",
+        "title": "ICT Forex Interactive Learning Experience - Scalping OTE Setup",
+        "published": null,
+        "timestamp": "00:06:14",
+        "link": "https://youtu.be/PrbvJ5Gzh4Q?t=374"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "SiVmoeyOWZE",
+        "title": "ICT Mentorship Core Content - Month 1 - Fair Valuation",
+        "published": null,
+        "timestamp": "00:12:01",
+        "link": "https://youtu.be/SiVmoeyOWZE?t=721"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "qC0LogyIk2I",
+        "title": "ICT Mentorship Core Content - Month 1 - Equilibrium Vs. Discount",
+        "published": null,
+        "timestamp": "00:41:07",
+        "link": "https://youtu.be/qC0LogyIk2I?t=2467"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 3,
+    "contradicts": [],
+    "notes": "Also states when fib does NOT work: 'why fibonacci 62 to 79 retracement levels work - any other time fibonacci is going to fail you'."
+  },
+  {
+    "rule_id": "OTE-002",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Optimal Trade Entry",
+    "category": "entry_mechanic",
+    "statement": "Enter at the 62% level specifically; do not wait for 70.5% or 79%. Place the stop five pips beyond the swing extreme the fib was drawn from.",
+    "preconditions": [
+      "OTE band framed"
+    ],
+    "trigger": "Price reaches the 62% retracement",
+    "entry": "At the 62% level",
+    "stop_loss": "Five pips beyond the origin swing high (short) or low (long)",
+    "target": "Opposing liquidity",
+    "invalidation": "Stop taken",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "PrbvJ5Gzh4Q",
+        "title": "ICT Forex Interactive Learning Experience - Scalping OTE Setup",
+        "published": null,
+        "timestamp": "00:13:30",
+        "link": "https://youtu.be/PrbvJ5Gzh4Q?t=810"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "The most explicit entry-and-stop instruction in the corpus: 'use 62... your stop has to be five pips above the old high that you pulled [the fib from]'. Five pips is an FX figure and does not transfer to indices or XAUUSD as-is - see GAPS.md."
+  },
+  {
+    "rule_id": "OTE-003",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Optimal Trade Entry",
+    "category": "entry_model",
+    "statement": "The tradeable sequence is: sweep a short-term low, shift market structure, then rally back into the OTE band - and it must fall inside a killzone.",
+    "preconditions": [
+      "Inside a killzone window",
+      "Bias established"
+    ],
+    "trigger": "Market structure shift after the sweep",
+    "entry": "Retracement into the OTE band",
+    "stop_loss": "Beyond the swept extreme",
+    "target": "Liquidity in the direction of the shift",
+    "invalidation": "No structure shift, or the move occurs outside killzone hours",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "2rFZwUaGxyY",
+        "title": "If I Had To Restart Again As A Trader, At 20 Years Old - Part 3",
+        "published": null,
+        "timestamp": "00:20:20",
+        "link": "https://youtu.be/2rFZwUaGxyY?t=1220"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "PrbvJ5Gzh4Q",
+        "title": "ICT Forex Interactive Learning Experience - Scalping OTE Setup",
+        "published": null,
+        "timestamp": "00:13:30",
+        "link": "https://youtu.be/PrbvJ5Gzh4Q?t=810"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "This is the operator's 'LDN to New York OTE' journal setup. The killzone requirement is implicit but clear: an example is set aside precisely because 'it's not in the killzone time'."
+  },
+  {
+    "rule_id": "OTE-004",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Optimal Trade Entry",
+    "category": "entry_mechanic",
+    "statement": "62% is the first level to act on; 79% is often not reached, so waiting for it forfeits trades that would have paid.",
+    "preconditions": [
+      "Price below equilibrium in a bullish read"
+    ],
+    "trigger": "Price trades below 50% and reaches 62%",
+    "entry": "At 62%",
+    "stop_loss": "Beyond the origin swing",
+    "target": "Opposing liquidity",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "NBBTRADER",
+        "video_id": "lL6maBEfjwU",
+        "title": "NBB Trader Free Mentorship (Lesson 3)",
+        "published": null,
+        "timestamp": "00:23:08",
+        "link": "https://youtu.be/lL6maBEfjwU?t=1388"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "NBB independently arrives at ICT's instruction: '62 is the first B I want to look at... 79 it doesn't always get to the 79'. Corroboration across both sources."
   }
 ]

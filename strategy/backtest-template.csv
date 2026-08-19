@@ -1,0 +1,2 @@
+date,time_ny,time_uk,instrument,setup,tier,rule_ids,htf_bias,draw_on_liquidity,resistance_class,session,window_hit,pd_array,entry,stop,target,size,risk_pct,checklist_score,outcome,r_multiple,mae,mfe,exit_reason,notes
+2026-01-05,10:14,15:14,NAS100,Silver Bullet,A,"SB-001,SB-003,SB-004",bullish,"relative equal highs 21450",low,NY AM,yes,FVG,21380,21356,21450,6,0.96,9,win,2.9,-8,72,target,"example row - delete"
