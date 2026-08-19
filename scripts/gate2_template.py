@@ -204,6 +204,32 @@ def find_working_actor(token, probe_video):
     return None
 
 
+_ID_RE = re.compile(r"(?:v=|youtu\.be/|/shorts/|/live/|/embed/)([A-Za-z0-9_-]{11})")
+
+
+def payload_video_id(payload):
+    """Recover which video an actor result belongs to.
+
+    Batched runs return rows in no guaranteed order, so results must be
+    matched back by id rather than by position -- pairing by index would
+    silently attach one video's transcript to another's citations.
+    """
+    for key in ("videoId", "video_id", "id"):
+        val = str(payload.get(key) or "")
+        if re.fullmatch(r"[A-Za-z0-9_-]{11}", val):
+            return val
+    for key in ("url", "videoUrl", "video_url", "link", "webUrl"):
+        m = _ID_RE.search(str(payload.get(key) or ""))
+        if m:
+            return m.group(1)
+    for val in payload.values():
+        if isinstance(val, dict):
+            got = payload_video_id(val)
+            if got:
+                return got
+    return None
+
+
 _CUE_KEYS = ("transcript", "captions", "segments", "subtitles", "data", "items", "lines")
 _START_KEYS = ("start", "startMs", "start_ms", "offset", "offsetMs", "startTime", "tStartMs")
 
@@ -349,46 +375,81 @@ def main():
     words = 0
     started = time.time()
 
-    for i, v in enumerate(queue, 1):
-        vid = v["video_id"]
-        dest = os.path.join("transcripts", vid + ".json")
-        if os.path.exists(dest):
+    pending = []
+    for v in queue:
+        if os.path.exists(os.path.join("transcripts", v["video_id"] + ".json")):
             skipped += 1
-            continue
-        try:
-            if use_apify:
-                items = apify_transcripts([vid], token, actor)
-                segments = extract_segments(items[0]) if items else []
-                kind = "unknown"
-            else:
-                segments, kind = try_ytdlp_captions(vid)
-                segments = segments or []
-        except Exception as exc:
-            print("  %s failed: %s" % (vid, str(exc)[:90]))
-            failed += 1
-            continue
+        else:
+            pending.append(v)
 
-        if not segments:
-            nocaps += 1
-            continue
-
-        record = {"id": vid, "title": v.get("title", ""),
-                  "channel": v.get("channel_name", ""),
-                  "url": v.get("url", ""), "buckets": v.get("buckets") or [],
+    def write_record(v, segments, kind, source):
+        record = {"id": v["video_id"], "title": v.get("title", ""),
+                  "channel": v.get("channel_name", ""), "url": v.get("url", ""),
+                  "buckets": v.get("buckets") or [],
                   "duration": v.get("duration_seconds"),
-                  "caption_kind": kind, "source": "apify:" + actor if use_apify else "yt-dlp",
-                  "segments": segments}
-        with open(dest, "w") as fh:
+                  "caption_kind": kind, "source": source, "segments": segments}
+        with open(os.path.join("transcripts", v["video_id"] + ".json"), "w") as fh:
             json.dump(record, fh)
-        ok += 1
-        words += sum(len(s["text"].split()) for s in segments)
+        return sum(len(s["text"].split()) for s in segments)
 
-        if i % 10 == 0 or i == len(queue):
+    if use_apify:
+        # Batched deliberately: one actor run per video would mean 181 runs,
+        # each paying startup overhead and each polled separately. Batches of
+        # 25 cut both the bill and the wall-clock time by roughly an order of
+        # magnitude.
+        BATCH = 25
+        for start in range(0, len(pending), BATCH):
+            batch = pending[start:start + BATCH]
+            ids = [v["video_id"] for v in batch]
+            by_id = {v["video_id"]: v for v in batch}
+            try:
+                items = apify_transcripts(ids, token, actor)
+            except Exception as exc:
+                print("  batch %d-%d failed: %s"
+                      % (start + 1, start + len(batch), str(exc)[:100]))
+                failed += len(batch)
+                continue
+
+            seen_ids = set()
+            for item in items:
+                vid = payload_video_id(item)
+                v = by_id.get(vid) if vid else None
+                if v is None:
+                    continue
+                seen_ids.add(vid)
+                segments = extract_segments(item)
+                if not segments:
+                    nocaps += 1
+                    continue
+                words += write_record(v, segments, "unknown", "apify:" + actor)
+                ok += 1
+            nocaps += len(set(ids) - seen_ids)
+
             elapsed = time.time() - started
-            rate = i / elapsed if elapsed else 0
-            left = (len(queue) - i) / rate / 60 if rate else 0
-            print("  %d/%d  ok=%d skip=%d none=%d fail=%d  ~%.0fm left"
-                  % (i, len(queue), ok, skipped, nocaps, failed, left), flush=True)
+            done = start + len(batch)
+            rate = done / elapsed if elapsed else 0
+            left = (len(pending) - done) / rate / 60 if rate else 0
+            print("  %d/%d  ok=%d none=%d fail=%d  ~%.0fm left"
+                  % (done, len(pending), ok, nocaps, failed, left), flush=True)
+    else:
+        for i, v in enumerate(pending, 1):
+            try:
+                segments, kind = try_ytdlp_captions(v["video_id"])
+            except Exception as exc:
+                print("  %s failed: %s" % (v["video_id"], str(exc)[:90]))
+                failed += 1
+                continue
+            if not segments:
+                nocaps += 1
+                continue
+            words += write_record(v, segments, kind, "yt-dlp")
+            ok += 1
+            if i % 10 == 0 or i == len(pending):
+                elapsed = time.time() - started
+                rate = i / elapsed if elapsed else 0
+                left = (len(pending) - i) / rate / 60 if rate else 0
+                print("  %d/%d  ok=%d none=%d fail=%d  ~%.0fm left"
+                      % (i, len(pending), ok, nocaps, failed, left), flush=True)
 
     line = "=" * 68
     print("\n" + line)

@@ -141,3 +141,39 @@ class TestActorList:
     def test_actors_configured(self, gate2):
         assert len(gate2.APIFY_ACTORS) >= 4
         assert all("~" in a for a in gate2.APIFY_ACTORS), "REST API needs tilde form"
+
+
+class TestPayloadVideoId:
+    """Batched runs return rows unordered, so results must be matched by id.
+    Pairing by position would attach one video's transcript to another's
+    citations -- silently, and unfixably after the fact."""
+
+    def test_direct_id_field(self, gate2):
+        assert gate2.payload_video_id({"videoId": "abcDEF12345"}) == "abcDEF12345"
+
+    def test_alternate_id_fields(self, gate2):
+        assert gate2.payload_video_id({"video_id": "abcDEF12345"}) == "abcDEF12345"
+        assert gate2.payload_video_id({"id": "abcDEF12345"}) == "abcDEF12345"
+
+    def test_recovered_from_url(self, gate2):
+        got = gate2.payload_video_id(
+            {"url": "https://www.youtube.com/watch?v=abcDEF12345"})
+        assert got == "abcDEF12345"
+
+    def test_short_url_form(self, gate2):
+        assert gate2.payload_video_id({"link": "https://youtu.be/abcDEF12345"}) == "abcDEF12345"
+
+    def test_non_id_in_id_field_falls_back_to_url(self, gate2):
+        got = gate2.payload_video_id(
+            {"id": "row-42", "videoUrl": "https://youtu.be/abcDEF12345"})
+        assert got == "abcDEF12345"
+
+    def test_nested(self, gate2):
+        got = gate2.payload_video_id({"meta": {"videoId": "abcDEF12345"}})
+        assert got == "abcDEF12345"
+
+    def test_unresolvable_returns_none(self, gate2):
+        assert gate2.payload_video_id({"title": "no id anywhere"}) is None
+
+    def test_wrong_length_rejected(self, gate2):
+        assert gate2.payload_video_id({"id": "tooshort"}) is None
