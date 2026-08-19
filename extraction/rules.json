@@ -479,5 +479,2415 @@
       "SB-001"
     ],
     "notes": "CONFLICTS WITH SB-001. NBB uses different hours on FX than ICT teaches for index futures. Likely instrument-driven rather than a genuine disagreement, but unresolved - see CONFLICTS.md."
+  },
+  {
+    "rule_id": "MM-001",
+    "topic_bucket": "money_maker_model",
+    "concept": "Market Maker Buy Model",
+    "category": "entry_model",
+    "statement": "The buy model runs in sequence: original consolidation, decline away, return to consolidation, distribution, redistribution, smart money reversal, low-risk buy, reaccumulation, then advance back to the original consolidation.",
+    "preconditions": [
+      "Higher timeframe bias bullish",
+      "An identifiable original consolidation"
+    ],
+    "trigger": "Smart money reversal after the redistribution leg",
+    "entry": "Low-risk buy at the reversal, adding at each reaccumulation",
+    "stop_loss": "Below the smart money reversal low",
+    "target": "Buy-side liquidity above the original consolidation",
+    "invalidation": "Price loses the smart money reversal low",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "indices",
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "ojy5ApHhEu4",
+        "title": "Deep Learning On Nasdaq Futures Trade - January 04, 2023",
+        "published": "2023-01-04",
+        "timestamp": "01:27:42",
+        "link": "https://youtu.be/ojy5ApHhEu4?t=5262"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "Cg0-CFJOJvg",
+        "title": "OTE Primer - Intro To ICT Optimal Trade Entry",
+        "published": null,
+        "timestamp": "00:28:57",
+        "link": "https://youtu.be/Cg0-CFJOJvg?t=1737"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "Cg0-CFJOJvg",
+        "title": "OTE Primer - Intro To ICT Optimal Trade Entry",
+        "published": null,
+        "timestamp": "00:33:38",
+        "link": "https://youtu.be/Cg0-CFJOJvg?t=2018"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 3,
+    "contradicts": [],
+    "notes": "Maps to the operator's MMBM journal setup. Walked through end to end on a live NASDAQ trade."
+  },
+  {
+    "rule_id": "MM-002",
+    "topic_bucket": "money_maker_model",
+    "concept": "Market Maker Sell Model",
+    "category": "entry_model",
+    "statement": "The sell model mirrors the buy model: accumulation, reaccumulation, reversal, low-risk sell, distribution, redistribution, second-stage distribution, then an aggressive sell-off into sell-side liquidity.",
+    "preconditions": [
+      "Higher timeframe bias bearish",
+      "An identifiable accumulation"
+    ],
+    "trigger": "Reversal after the reaccumulation leg",
+    "entry": "Low-risk sell at the reversal",
+    "stop_loss": "Above the reversal high",
+    "target": "Sell-side liquidity below the range",
+    "invalidation": "Price reclaims the reversal high",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "indices",
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "AKg_r0DIa3k",
+        "title": "ICT Mentorship 2023 Market Review - July 09, 2023",
+        "published": "2023-07-09",
+        "timestamp": "00:30:26",
+        "link": "https://youtu.be/AKg_r0DIa3k?t=1826"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Maps to the operator's MMSM journal setup. Called 'a classic ICT market maker sell model' on a live review."
+  },
+  {
+    "rule_id": "MM-003",
+    "topic_bucket": "money_maker_model",
+    "concept": "The Curve",
+    "category": "bias",
+    "statement": "Read the model as a curve: in a buy model price is driven lower in order to go higher, so the sell side of the curve precedes the buy side.",
+    "preconditions": [],
+    "trigger": "Identifying which half of the curve price is on",
+    "entry": "Bullish order blocks form on the sell side of the curve",
+    "stop_loss": "",
+    "target": "The buy side of the curve delivers new higher highs",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "4h",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "X5pQjfkAUCI",
+        "title": "ICT Mentorship Core Content - Month 04 - Reclaimed ICT Orderblock",
+        "published": null,
+        "timestamp": "00:03:41",
+        "link": "https://youtu.be/X5pQjfkAUCI?t=221"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "The orienting idea behind the whole model: 'the market is going lower to go higher'."
+  },
+  {
+    "rule_id": "MM-004",
+    "topic_bucket": "money_maker_model",
+    "concept": "Original Consolidation",
+    "category": "liquidity",
+    "statement": "The original consolidation is the objective: price advances toward it until it takes the buy stops resting above its relative equal high.",
+    "preconditions": [
+      "Buy model in progress"
+    ],
+    "trigger": "Advance out of the low-risk buy",
+    "entry": "",
+    "stop_loss": "",
+    "target": "Buy stops above the original consolidation's relative equal high",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "i8xt0EQDjNY",
+        "title": "ICT Forex - Market Maker Series Vol. 3 of 5",
+        "published": null,
+        "timestamp": "00:15:59",
+        "link": "https://youtu.be/i8xt0EQDjNY?t=959"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "ojy5ApHhEu4",
+        "title": "Deep Learning On Nasdaq Futures Trade - January 04, 2023",
+        "published": "2023-01-04",
+        "timestamp": "01:27:42",
+        "link": "https://youtu.be/ojy5ApHhEu4?t=5262"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Gives the model a defined objective rather than an open-ended runner. [category recorded as 'target'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "MM-005",
+    "topic_bucket": "money_maker_model",
+    "concept": "Original Consolidation",
+    "category": "invalidation",
+    "statement": "If price returns to the original consolidation it must reject sharply. Returning and lingering there voids the read; failing to reach it and then breaking hard is the strongest version.",
+    "preconditions": [
+      "Price returning to the original consolidation"
+    ],
+    "trigger": "Price reaches or approaches the original consolidation low",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "Price returns to the original consolidation and consolidates there instead of rejecting",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "i8xt0EQDjNY",
+        "title": "ICT Forex - Market Maker Series Vol. 3 of 5",
+        "published": null,
+        "timestamp": "00:09:46",
+        "link": "https://youtu.be/i8xt0EQDjNY?t=586"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "A rare explicit invalidation condition: 'it can't just come back and hang around for a little while'."
+  },
+  {
+    "rule_id": "MM-006",
+    "topic_bucket": "money_maker_model",
+    "concept": "Low Resistance Liquidity Run",
+    "category": "liquidity",
+    "statement": "Classify every trade as a low- or high-resistance liquidity run and only take low-resistance ones. Low resistance means no opposing liquidity pool sits between entry and objective.",
+    "preconditions": [
+      "A candidate setup identified"
+    ],
+    "trigger": "Before entry, check what sits between price and the objective",
+    "entry": "Take the trade only when the run to target is low resistance",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "An opposing high or low sits between entry and objective",
+    "timeframes": {
+      "htf": "1M",
+      "mtf": "1W",
+      "ltf": "4h"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "sfRO5LrTgTA",
+        "title": "ICT Mentorship 2023 - Advanced Gap Theory Introduction",
+        "published": null,
+        "timestamp": "00:06:37",
+        "link": "https://youtu.be/sfRO5LrTgTA?t=397"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "npL3ZXJ5zOU",
+        "title": "ICT Mentorship Core Content - Month 04 - Reinforcing Liquidity Concept",
+        "published": null,
+        "timestamp": "00:12:36",
+        "link": "https://youtu.be/npL3ZXJ5zOU?t=756"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "npL3ZXJ5zOU",
+        "title": "ICT Mentorship Core Content - Month 04 - Reinforcing Liquidity Concept",
+        "published": null,
+        "timestamp": "00:30:48",
+        "link": "https://youtu.be/npL3ZXJ5zOU?t=1848"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 3,
+    "contradicts": [],
+    "notes": "The single most useful filter found so far: 'low resistance liquidity runs are high probability and immediate gratification'; high resistance runs are explicitly what NOT to trade. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "MM-007",
+    "topic_bucket": "money_maker_model",
+    "concept": "Internal Range Liquidity",
+    "category": "liquidity",
+    "statement": "A move that stays inside the monthly and weekly range is internal range liquidity and therefore low resistance, even where a lower timeframe shows apparent resistance.",
+    "preconditions": [
+      "Monthly and weekly ranges mapped"
+    ],
+    "trigger": "Objective sits inside the higher timeframe range",
+    "entry": "",
+    "stop_loss": "",
+    "target": "The buy stops above the high being run",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1M",
+      "mtf": "1W",
+      "ltf": "4h"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "npL3ZXJ5zOU",
+        "title": "ICT Mentorship Core Content - Month 04 - Reinforcing Liquidity Concept",
+        "published": null,
+        "timestamp": "00:33:57",
+        "link": "https://youtu.be/npL3ZXJ5zOU?t=2037"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Explains why lower-timeframe 'resistance' can be ignored when the higher timeframe wants the level. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "MM-008",
+    "topic_bucket": "money_maker_model",
+    "concept": "Smart Money Reversal",
+    "category": "entry_mechanic",
+    "statement": "The smart money reversal forms with a small amount of consolidation, not an extended one.",
+    "preconditions": [
+      "Price at the anticipated reversal level"
+    ],
+    "trigger": "Brief consolidation at the key level, then reversal",
+    "entry": "Low-risk buy or sell off the reversal",
+    "stop_loss": "Beyond the reversal extreme",
+    "target": "",
+    "invalidation": "Consolidation extends rather than reversing",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "i8xt0EQDjNY",
+        "title": "ICT Forex - Market Maker Series Vol. 3 of 5",
+        "published": null,
+        "timestamp": "00:22:13",
+        "link": "https://youtu.be/i8xt0EQDjNY?t=1333"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "'smart money reversal occurs with some measure of consolidation, not a lot'. [category recorded as 'trigger'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "MM-009",
+    "topic_bucket": "money_maker_model",
+    "concept": "Institutional Sponsorship",
+    "category": "liquidity",
+    "statement": "Take the market maker's perspective: to sell high you need buyers willing to buy higher, so look for short-term buy-side liquidity above the market before selling into it.",
+    "preconditions": [],
+    "trigger": "Buy stops identified above old highs",
+    "entry": "Sell into the liquidity once it is attacked",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "t2VNzJZ4hK4",
+        "title": "ICT Mentorship Core Content - Month 03 - Institutional Sponsorship",
+        "published": null,
+        "timestamp": "00:01:56",
+        "link": "https://youtu.be/t2VNzJZ4hK4?t=116"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "The role-playing frame that motivates hunting liquidity pools rather than chasing breakouts."
+  },
+  {
+    "rule_id": "MM-010",
+    "topic_bucket": "money_maker_model",
+    "concept": "Second Stage Distribution",
+    "category": "bias",
+    "statement": "A second stage of distribution distinguishes a genuine sell model running for the liquidity below from a pullback that will simply reaccumulate and go long again.",
+    "preconditions": [
+      "Sell model candidate in progress"
+    ],
+    "trigger": "Whether a second stage of distribution forms",
+    "entry": "",
+    "stop_loss": "",
+    "target": "Liquidity below the original consolidation lows",
+    "invalidation": "No second stage forms; treat as reaccumulation instead",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "NBBTRADER",
+        "video_id": "9j1jttkm4s8",
+        "title": "ICT Roundtable: NBB Trader, JadeCapFX, Ali khan ICT, Kimmel Trading | WOR Podcast",
+        "published": null,
+        "timestamp": "00:40:03",
+        "link": "https://youtu.be/9j1jttkm4s8?t=2403"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "NBB's practical tell for reading which way the model resolves. Complements MM-002."
+  },
+  {
+    "rule_id": "FVG-001",
+    "topic_bucket": "fair_value_gaps",
+    "concept": "Consequent Encroachment",
+    "category": "entry_mechanic",
+    "statement": "Consequent encroachment is the midpoint of a fair value gap and is the reference level inside it.",
+    "preconditions": [],
+    "trigger": "Price enters a fair value gap",
+    "entry": "Measure to the midpoint; that is consequent encroachment",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "_NWG_eJRBpU",
+        "title": "ICT Mentorship 2023 - Market Review & August Trading Concerns",
+        "published": null,
+        "timestamp": "00:04:58",
+        "link": "https://youtu.be/_NWG_eJRBpU?t=298"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "C_0Jh7HwCUI",
+        "title": "Advanced ICT Liquidity Concepts \\ October 11, 2025",
+        "published": "2025-10-11",
+        "timestamp": "00:03:50",
+        "link": "https://youtu.be/C_0Jh7HwCUI?t=230"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Second source has manual captions, so the term is confirmed spelled correctly rather than inferred from auto-caption mangling."
+  },
+  {
+    "rule_id": "FVG-002",
+    "topic_bucket": "fair_value_gaps",
+    "concept": "Institutional Order Flow Entry Drill",
+    "category": "entry_mechanic",
+    "statement": "An institutional order flow entry drill is a shallow entry into a fair value gap that does not reach the midpoint, followed by aggressive movement away from it.",
+    "preconditions": [
+      "Directional bias established"
+    ],
+    "trigger": "Price makes a partial entry into the gap without reaching consequent encroachment",
+    "entry": "At the shallow touch, before the midpoint",
+    "stop_loss": "Beyond the far side of the gap",
+    "target": "In the direction of the aggressive move out",
+    "invalidation": "Price trades through consequent encroachment and closes beyond it",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "ojy5ApHhEu4",
+        "title": "Deep Learning On Nasdaq Futures Trade - January 04, 2023",
+        "published": "2023-01-04",
+        "timestamp": "00:30:33",
+        "link": "https://youtu.be/ojy5ApHhEu4?t=1833"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "_NWG_eJRBpU",
+        "title": "ICT Mentorship 2023 - Market Review & August Trading Concerns",
+        "published": null,
+        "timestamp": "00:04:58",
+        "link": "https://youtu.be/_NWG_eJRBpU?t=298"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Explains entries that look 'missed' on the chart: the algorithm only needs a partial fill."
+  },
+  {
+    "rule_id": "FVG-003",
+    "topic_bucket": "fair_value_gaps",
+    "concept": "Displacement Fair Value Gap",
+    "category": "entry_model",
+    "statement": "After a market structure shift, enter the fair value gap left by the displacement leg; where two gaps stack, the entry is the lower one in a bullish case.",
+    "preconditions": [
+      "Market structure shift confirmed"
+    ],
+    "trigger": "Displacement leg creates a fair value gap",
+    "entry": "Into the displacement fair value gap",
+    "stop_loss": "Beyond the structure point that was shifted",
+    "target": "Opposing liquidity",
+    "invalidation": "Structure shift fails and price reclaims the level",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "kmVXVJE08eQ",
+        "title": "2022 ICT Mentorship Episode 21",
+        "published": null,
+        "timestamp": "00:19:42",
+        "link": "https://youtu.be/kmVXVJE08eQ?t=1182"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": ""
+  },
+  {
+    "rule_id": "FVG-004",
+    "topic_bucket": "fair_value_gaps",
+    "concept": "Rebalance vs Reprice",
+    "category": "entry_mechanic",
+    "statement": "A gap is only balanced once price trades back through the originating range low; trading back up into the area is repricing, not rebalancing.",
+    "preconditions": [],
+    "trigger": "Price returns to a prior gap",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "Treating a reprice as a rebalance",
+    "timeframes": {
+      "htf": "4h",
+      "mtf": "1h",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "qQvEV2dTTW8",
+        "title": "Bridge Builder - ICT Concepts Overview",
+        "published": null,
+        "timestamp": "01:29:29",
+        "link": "https://youtu.be/qQvEV2dTTW8?t=5369"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "A distinction stated emphatically and easy to get backwards: 'that is not a rebalance, that's repriced'. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "FVG-005",
+    "topic_bucket": "fair_value_gaps",
+    "concept": "Fair Value Gap Entry",
+    "category": "entry_mechanic",
+    "statement": "A single fair value gap usually offers several entry attempts as price cycles through it; a missed first touch is not a missed trade.",
+    "preconditions": [
+      "Gap identified on the execution timeframe"
+    ],
+    "trigger": "Price returns into the gap",
+    "entry": "Any of the successive touches inside the gap",
+    "stop_loss": "Beyond the far side of the gap",
+    "target": "",
+    "invalidation": "Price closes through and away from the gap",
+    "timeframes": {
+      "htf": "15m",
+      "mtf": "2m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "Bkt8B3kLATQ",
+        "title": "2022 ICT Mentorship Episode 6",
+        "published": null,
+        "timestamp": "00:28:25",
+        "link": "https://youtu.be/Bkt8B3kLATQ?t=1705"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Consistent with SB-005: the model repeatedly discourages chasing."
+  },
+  {
+    "rule_id": "FVG-006",
+    "topic_bucket": "fair_value_gaps",
+    "concept": "Classic Buy Day",
+    "category": "entry_model",
+    "statement": "On a classic buy day price opens at midnight, trades down to set the day's low, then rallies; buy the sell stops inside the fair value gap or the optimal trade entry that forms.",
+    "preconditions": [
+      "Bullish daily bias",
+      "Price in discount"
+    ],
+    "trigger": "Day's low formed after the midnight open",
+    "entry": "Sell stops inside the fair value gap, or the optimal trade entry",
+    "stop_loss": "Below the day's low",
+    "target": "Buy-side liquidity above",
+    "invalidation": "Price continues lower and takes out the assumed day's low",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "5m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [
+      "SMT divergence"
+    ],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "36184dDAqtM",
+        "title": "2022 ICT Mentorship Episode 38",
+        "published": null,
+        "timestamp": "00:41:53",
+        "link": "https://youtu.be/36184dDAqtM?t=2513"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Pairs the day-model with SMT: 'you're going to buy the short term low during SMT divergence'."
+  },
+  {
+    "rule_id": "IFVG-001",
+    "topic_bucket": "inversion_fair_value_gaps",
+    "concept": "Inversion Fair Value Gap",
+    "category": "entry_model",
+    "statement": "A fair value gap that price trades decisively through inverts: a bullish gap that fails becomes resistance, and a bearish gap that fails becomes support.",
+    "preconditions": [
+      "A prior fair value gap identified"
+    ],
+    "trigger": "Price closes through the gap and then returns to it",
+    "entry": "On the retest of the inverted gap, in the new direction",
+    "stop_loss": "Beyond the far side of the inverted gap",
+    "target": "The next opposing liquidity pool",
+    "invalidation": "Price closes back through the gap in the original direction",
+    "timeframes": {
+      "htf": "1W",
+      "mtf": "1D",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "_NWG_eJRBpU",
+        "title": "ICT Mentorship 2023 - Market Review & August Trading Concerns",
+        "published": null,
+        "timestamp": "00:03:56",
+        "link": "https://youtu.be/_NWG_eJRBpU?t=236"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "1PkTGkOjoGo",
+        "title": "ICT Mentorship 2023 - September 08, 2023 Review & ICT Ma Deuce Model",
+        "published": "2023-09-08",
+        "timestamp": "00:24:11",
+        "link": "https://youtu.be/1PkTGkOjoGo?t=1451"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "3J8drYX2zHM",
+        "title": "ICT 2026 Asian Session Short Review \\ April 14, 2026",
+        "published": "2026-04-14",
+        "timestamp": "00:10:10",
+        "link": "https://youtu.be/3J8drYX2zHM?t=610"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 3,
+    "contradicts": [],
+    "notes": "Third source has manual captions. 'Reclaimed fair value gap' is used interchangeably."
+  },
+  {
+    "rule_id": "IFVG-002",
+    "topic_bucket": "inversion_fair_value_gaps",
+    "concept": "Inversion Fair Value Gap",
+    "category": "entry_mechanic",
+    "statement": "Place the stop just beyond the inversion fair value gap itself, not at a wider structural level.",
+    "preconditions": [
+      "Entry taken at an inverted gap"
+    ],
+    "trigger": "Entry filled",
+    "entry": "Inside the inverted gap",
+    "stop_loss": "Immediately below the inversion fair value gap (bullish) or above it (bearish)",
+    "target": "Opposing liquidity",
+    "invalidation": "Stop level taken",
+    "timeframes": {
+      "htf": "15m",
+      "mtf": "1m",
+      "ltf": "15s"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "vuBRMFhFZAY",
+        "title": "ICT Mentorship 2023 - One Trading Setup For Life",
+        "published": null,
+        "timestamp": "01:18:34",
+        "link": "https://youtu.be/vuBRMFhFZAY?t=4714"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "clG2IDpEcjE",
+        "title": "ICT 2026 Micro Emini S&P 500 Live Trade Execution \\ March 09, 2026",
+        "published": "2026-03-09",
+        "timestamp": "00:00:02",
+        "link": "https://youtu.be/clG2IDpEcjE?t=2"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Quoted twice on live executions, once with manual captions: 'stop loss right below this candlestick's low'."
+  },
+  {
+    "rule_id": "IFVG-003",
+    "topic_bucket": "inversion_fair_value_gaps",
+    "concept": "Inversion Fair Value Gap",
+    "category": "entry_mechanic",
+    "statement": "An inverted gap behaves as dynamic support or resistance and can be added into on successive respects, rather than being a single-touch level.",
+    "preconditions": [
+      "Inverted gap identified"
+    ],
+    "trigger": "Price respects the inverted gap",
+    "entry": "Initial entry plus additions on subsequent respects",
+    "stop_loss": "Beyond the inverted gap",
+    "target": "Opposing liquidity",
+    "invalidation": "A close through the gap against the position",
+    "timeframes": {
+      "htf": "15m",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "vuBRMFhFZAY",
+        "title": "ICT Mentorship 2023 - One Trading Setup For Life",
+        "published": null,
+        "timestamp": "01:18:34",
+        "link": "https://youtu.be/vuBRMFhFZAY?t=4714"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "dA2CHAN1DzY",
+        "title": "Trading Premarket and Regular Session Liquidity",
+        "published": null,
+        "timestamp": "00:10:02",
+        "link": "https://youtu.be/dA2CHAN1DzY?t=602"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Second source manual captions: 'I added all in here inside that reclaimed bearish fair value gap'."
+  },
+  {
+    "rule_id": "IFVG-004",
+    "topic_bucket": "inversion_fair_value_gaps",
+    "concept": "Selecting the Inversion",
+    "category": "entry_mechanic",
+    "statement": "Which gap inverts is chosen by time, price and institutional market structure plus premium/discount position, not by classic higher-high/lower-low structure.",
+    "preconditions": [
+      "Several candidate gaps on the chart"
+    ],
+    "trigger": "Choosing which gap to trade",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [
+      "premium/discount position",
+      "institutional market structure"
+    ],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "1PkTGkOjoGo",
+        "title": "ICT Mentorship 2023 - September 08, 2023 Review & ICT Ma Deuce Model",
+        "published": "2023-09-08",
+        "timestamp": "00:15:22",
+        "link": "https://youtu.be/1PkTGkOjoGo?t=922"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "1PkTGkOjoGo",
+        "title": "ICT Mentorship 2023 - September 08, 2023 Review & ICT Ma Deuce Model",
+        "published": "2023-09-08",
+        "timestamp": "00:27:50",
+        "link": "https://youtu.be/1PkTGkOjoGo?t=1670"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Answers the obvious question directly, though the answer is a framework rather than a checklist. Flagged in GAPS.md as under-specified. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "IFVG-005",
+    "topic_bucket": "inversion_fair_value_gaps",
+    "concept": "Consequent Encroachment of an IFVG",
+    "category": "entry_mechanic",
+    "statement": "The consequent encroachment of an inversion fair value gap is the sensitive level; bodies respecting it confirms the inversion is holding.",
+    "preconditions": [
+      "Inverted gap identified"
+    ],
+    "trigger": "Price returns to the midpoint of the inverted gap",
+    "entry": "At consequent encroachment",
+    "stop_loss": "Beyond the gap",
+    "target": "",
+    "invalidation": "Bodies close through consequent encroachment",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "C_0Jh7HwCUI",
+        "title": "Advanced ICT Liquidity Concepts \\ October 11, 2025",
+        "published": "2025-10-11",
+        "timestamp": "00:03:50",
+        "link": "https://youtu.be/C_0Jh7HwCUI?t=230"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "C_0Jh7HwCUI",
+        "title": "Advanced ICT Liquidity Concepts \\ October 11, 2025",
+        "published": "2025-10-11",
+        "timestamp": "00:00:38",
+        "link": "https://youtu.be/C_0Jh7HwCUI?t=38"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Both sources manual captions. Note 'bodies', not wicks."
+  },
+  {
+    "rule_id": "IFVG-006",
+    "topic_bucket": "inversion_fair_value_gaps",
+    "concept": "ICT Reaper",
+    "category": "entry_model",
+    "statement": "The Reaper is a fair value gap sitting in the discount of the impulsive leg of a bullish breaker; the bearish mirror is a gap in the premium of a bearish breaker's impulsive leg.",
+    "preconditions": [
+      "A breaker identified",
+      "A retail idea present that would lure traders the other way"
+    ],
+    "trigger": "Price returns into the gap within the breaker's impulsive leg",
+    "entry": "At the gap inside the breaker leg",
+    "stop_loss": "Beyond the breaker",
+    "target": "Opposing liquidity",
+    "invalidation": "Breaker fails",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "cgsltOB736E",
+        "title": "ICT Mentorship 2023 - ICT Reaper PD Array Introduction & Market Review",
+        "published": null,
+        "timestamp": "00:21:44",
+        "link": "https://youtu.be/cgsltOB736E?t=1304"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "An advanced variant. Requires a retail pattern to be present as the liquidity source."
+  },
+  {
+    "rule_id": "LDN-001",
+    "topic_bucket": "london_session",
+    "concept": "London Killzone",
+    "category": "bias",
+    "statement": "The London killzone runs 02:00-05:00 New York time.",
+    "preconditions": [],
+    "trigger": "Clock enters the window",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "London",
+    "time_window": {
+      "ny": "02:00-05:00",
+      "london": "07:00-10:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "cxdjcXec3eA",
+        "title": "ICT Forex Review January 09, 2023",
+        "published": "2023-01-09",
+        "timestamp": "00:04:43",
+        "link": "https://youtu.be/cxdjcXec3eA?t=283"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "9_qyz3TNcJU",
+        "title": "ICT Institutional Price Action: Micro-Market Structure & Time & Price",
+        "published": null,
+        "timestamp": "00:33:06",
+        "link": "https://youtu.be/9_qyz3TNcJU?t=1986"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [
+      "LDN-002"
+    ],
+    "notes": "All times New York local. UK is normally +5h, but US and UK daylight-saving dates differ by about three weeks in spring and one in autumn, when it is +4h. See the DST table in the system doc. CONFLICTS with LDN-002, which gives 01:00 as the start. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "LDN-002",
+    "topic_bucket": "london_session",
+    "concept": "London Killzone",
+    "category": "bias",
+    "statement": "An alternative statement puts the London killzone at 01:00-05:00 New York time.",
+    "preconditions": [],
+    "trigger": "Clock enters the window",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "London",
+    "time_window": {
+      "ny": "01:00-05:00",
+      "london": "06:00-10:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "_2nUKLAD9ig",
+        "title": "ICT Mentorship Core Content - Month 08 - Defining The Daily Range",
+        "published": null,
+        "timestamp": "00:08:28",
+        "link": "https://youtu.be/_2nUKLAD9ig?t=508"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "_2nUKLAD9ig",
+        "title": "ICT Mentorship Core Content - Month 08 - Defining The Daily Range",
+        "published": null,
+        "timestamp": "00:03:14",
+        "link": "https://youtu.be/_2nUKLAD9ig?t=194"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 2,
+    "contradicts": [
+      "LDN-001"
+    ],
+    "notes": "'the time window begins at 1am it ends at 5am'. Both statements agree the window ENDS at 05:00. Unresolved start time - see CONFLICTS.md. Taking 02:00 is the conservative read. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "LDN-003",
+    "topic_bucket": "london_session",
+    "concept": "London Close Killzone",
+    "category": "bias",
+    "statement": "The London close killzone runs 10:00-12:00 New York time.",
+    "preconditions": [],
+    "trigger": "Clock enters the window",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "London",
+    "time_window": {
+      "ny": "10:00-12:00",
+      "london": "15:00-17:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "_2nUKLAD9ig",
+        "title": "ICT Mentorship Core Content - Month 08 - Defining The Daily Range",
+        "published": null,
+        "timestamp": "00:04:14",
+        "link": "https://youtu.be/_2nUKLAD9ig?t=254"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "9_qyz3TNcJU",
+        "title": "ICT Institutional Price Action: Micro-Market Structure & Time & Price",
+        "published": null,
+        "timestamp": "00:33:06",
+        "link": "https://youtu.be/9_qyz3TNcJU?t=1986"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "All times New York local. UK is normally +5h, but US and UK daylight-saving dates differ by about three weeks in spring and one in autumn, when it is +4h. See the DST table in the system doc. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "LDN-004",
+    "topic_bucket": "london_session",
+    "concept": "Judas Swing",
+    "category": "entry_model",
+    "statement": "Each session opens with a Judas swing - a false move against the intended direction that runs stops before the real move. London open, CME open, Asia at 20:00 and London close each have one.",
+    "preconditions": [
+      "Directional bias established"
+    ],
+    "trigger": "Session opens and price moves against the expected direction",
+    "entry": "After the false move reverses and breaks structure",
+    "stop_loss": "Beyond the Judas extreme",
+    "target": "The liquidity the session is drawing toward",
+    "invalidation": "The 'false' move continues and holds",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "London",
+    "time_window": {
+      "ny": "02:00-05:00",
+      "london": "07:00-10:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "KrGTimL3YRQ",
+        "title": "ICT Mentorship Core Content - Month 09 - Trading Market Reversals",
+        "published": null,
+        "timestamp": "00:27:45",
+        "link": "https://youtu.be/KrGTimL3YRQ?t=1665"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "Utbl3Tv6UEg",
+        "title": "ICT Forex Price Action Lecture: Daytrading & Psychology",
+        "published": null,
+        "timestamp": "00:16:19",
+        "link": "https://youtu.be/Utbl3Tv6UEg?t=979"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "The London Judas frequently sets the day's low: 'the low forms at 2 45 then 3 o'clock in the morning, that's the heart of London open, makes the low of the day with a Judas swing'."
+  },
+  {
+    "rule_id": "LDN-005",
+    "topic_bucket": "london_session",
+    "concept": "Asian Range Filter",
+    "category": "invalidation",
+    "statement": "Do not take the London session if the Asian range failed to settle into a 20-30 pip consolidation; excess Asian volatility means float is not being allowed to build.",
+    "preconditions": [
+      "Asian range measured"
+    ],
+    "trigger": "Asian range wider than roughly 30 pips, or Central Bank dealers range already extended",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "Skip London entirely on such days",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": null
+    },
+    "session": "London",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "eU8WcUftUtY",
+        "title": "ICT Mentorship Core Content - Month 08 - Intraday Profiles",
+        "published": null,
+        "timestamp": "00:05:00",
+        "link": "https://youtu.be/eU8WcUftUtY?t=300"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "A genuine no-trade condition, which the corpus offers few of. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "LDN-006",
+    "topic_bucket": "london_session",
+    "concept": "London Open Setup",
+    "category": "entry_model",
+    "statement": "A high-probability London setup is an order block below a short-term low - previous day or intraday - that price runs into during the killzone, overlapping the Central Bank dealers range or Asian range.",
+    "preconditions": [
+      "Bullish bias",
+      "Inside the London killzone"
+    ],
+    "trigger": "Sell stops below the short-term low are triggered",
+    "entry": "The order block beneath that low",
+    "stop_loss": "Below the order block",
+    "target": "London session extreme / opposing liquidity",
+    "invalidation": "No reaction from the order block",
+    "timeframes": {
+      "htf": "4h",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "London",
+    "time_window": {
+      "ny": "02:00-05:00",
+      "london": "07:00-10:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "FX majors"
+    ],
+    "confluences_required": [
+      "Central Bank dealers range",
+      "Asian range"
+    ],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "5Z_3NbclMSY",
+        "title": "ICT Mentorship Core Content - Month 08 - High Probability Daytrade Setups",
+        "published": null,
+        "timestamp": "00:08:40",
+        "link": "https://youtu.be/5Z_3NbclMSY?t=520"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "5Z_3NbclMSY",
+        "title": "ICT Mentorship Core Content - Month 08 - High Probability Daytrade Setups",
+        "published": null,
+        "timestamp": "00:02:23",
+        "link": "https://youtu.be/5Z_3NbclMSY?t=143"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": ""
+  },
+  {
+    "rule_id": "NY-001",
+    "topic_bucket": "new_york_session",
+    "concept": "New York Killzone",
+    "category": "bias",
+    "statement": "The New York killzone runs 07:00-09:00 New York time for FX.",
+    "preconditions": [],
+    "trigger": "Clock enters the window",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "NY AM",
+    "time_window": {
+      "ny": "07:00-09:00",
+      "london": "12:00-14:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "FX majors"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "9_qyz3TNcJU",
+        "title": "ICT Institutional Price Action: Micro-Market Structure & Time & Price",
+        "published": null,
+        "timestamp": "00:33:06",
+        "link": "https://youtu.be/9_qyz3TNcJU?t=1986"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "cxdjcXec3eA",
+        "title": "ICT Forex Review January 09, 2023",
+        "published": "2023-01-09",
+        "timestamp": "00:04:43",
+        "link": "https://youtu.be/cxdjcXec3eA?t=283"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "All times New York local. UK is normally +5h, but US and UK daylight-saving dates differ by about three weeks in spring and one in autumn, when it is +4h. See the DST table in the system doc. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "NY-002",
+    "topic_bucket": "new_york_session",
+    "concept": "New York AM Session",
+    "category": "bias",
+    "statement": "The New York session proper is 08:30-11:00 New York time; the AM trend on index futures is 09:30-12:00.",
+    "preconditions": [],
+    "trigger": "Clock enters the window",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "NY AM",
+    "time_window": {
+      "ny": "08:30-11:00",
+      "london": "13:30-16:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "kmVXVJE08eQ",
+        "title": "2022 ICT Mentorship Episode 21",
+        "published": null,
+        "timestamp": "00:23:53",
+        "link": "https://youtu.be/kmVXVJE08eQ?t=1433"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "9_qyz3TNcJU",
+        "title": "ICT Institutional Price Action: Micro-Market Structure & Time & Price",
+        "published": null,
+        "timestamp": "00:33:06",
+        "link": "https://youtu.be/9_qyz3TNcJU?t=1986"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "wWCKTEhVp2o",
+        "title": "ICT Mentorship Core Content - Month 10 - Index Futures - AM Trend",
+        "published": null,
+        "timestamp": "00:02:11",
+        "link": "https://youtu.be/wWCKTEhVp2o?t=131"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 3,
+    "contradicts": [],
+    "notes": "All times New York local. UK is normally +5h, but US and UK daylight-saving dates differ by about three weeks in spring and one in autumn, when it is +4h. See the DST table in the system doc. Note the two windows differ: 08:30-11:00 is the session, 09:30-12:00 is the AM trend on indices. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "NY-003",
+    "topic_bucket": "new_york_session",
+    "concept": "08:30 Opening Price",
+    "category": "entry_mechanic",
+    "statement": "The 08:30 New York opening price is a distinct reference from the midnight opening price; for a long, require price to run above the 08:30 open.",
+    "preconditions": [
+      "Trading the New York session"
+    ],
+    "trigger": "Price runs above (long) or below (short) the 08:30 opening price",
+    "entry": "Fair value gap in the direction of that run",
+    "stop_loss": "Beyond the session extreme",
+    "target": "Opposing liquidity",
+    "invalidation": "Price fails to take the 08:30 open",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "NY AM",
+    "time_window": {
+      "ny": "08:30",
+      "london": "13:30",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "kmVXVJE08eQ",
+        "title": "2022 ICT Mentorship Episode 21",
+        "published": null,
+        "timestamp": "00:23:53",
+        "link": "https://youtu.be/kmVXVJE08eQ?t=1433"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "kmVXVJE08eQ",
+        "title": "2022 ICT Mentorship Episode 21",
+        "published": null,
+        "timestamp": "00:29:08",
+        "link": "https://youtu.be/kmVXVJE08eQ?t=1748"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Explicit warning not to confuse it with the midnight open: 'don't get confused with the New York midnight candle's opening price'."
+  },
+  {
+    "rule_id": "NY-004",
+    "topic_bucket": "new_york_session",
+    "concept": "CME Open 08:20",
+    "category": "bias",
+    "statement": "08:20 New York, the CME open, is the preferred signal time; signals can appear from 08:00 but 08:20 is the target.",
+    "preconditions": [],
+    "trigger": "Clock reaches 08:20 New York",
+    "entry": "Signal forming at or just after the CME open",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "NY AM",
+    "time_window": {
+      "ny": "08:00-08:30",
+      "london": "13:00-13:30",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "bonds",
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "CGbSpa_9Z9Y",
+        "title": "ICT Mentorship Core Content - Month 10 - Bond Trading - Basics & Setups",
+        "published": null,
+        "timestamp": "00:11:36",
+        "link": "https://youtu.be/CGbSpa_9Z9Y?t=696"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "_2nUKLAD9ig",
+        "title": "ICT Mentorship Core Content - Month 08 - Defining The Daily Range",
+        "published": null,
+        "timestamp": "00:08:28",
+        "link": "https://youtu.be/_2nUKLAD9ig?t=508"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Rationale given: New York traders arrive at 08:20 while London traders are still active. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "NY-005",
+    "topic_bucket": "new_york_session",
+    "concept": "New York PM Session",
+    "category": "bias",
+    "statement": "The PM session runs 13:00-16:00 New York time, and the true day high or low tends to form between 15:00 and 16:00.",
+    "preconditions": [],
+    "trigger": "Clock enters the window",
+    "entry": "",
+    "stop_loss": "",
+    "target": "The true day high or low forming 15:00-16:00",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "NY PM",
+    "time_window": {
+      "ny": "13:00-16:00",
+      "london": "18:00-21:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "qZg_5bac518",
+        "title": "ICT Mentorship Core Content - Month 10 - Index Futures - PM Trend",
+        "published": null,
+        "timestamp": "00:00:34",
+        "link": "https://youtu.be/qZg_5bac518?t=34"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "9_qyz3TNcJU",
+        "title": "ICT Institutional Price Action: Micro-Market Structure & Time & Price",
+        "published": null,
+        "timestamp": "00:33:06",
+        "link": "https://youtu.be/9_qyz3TNcJU?t=1986"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "All times New York local. UK is normally +5h, but US and UK daylight-saving dates differ by about three weeks in spring and one in autumn, when it is +4h. See the DST table in the system doc. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "NY-006",
+    "topic_bucket": "new_york_session",
+    "concept": "Index SMT Windows",
+    "category": "entry_model",
+    "statement": "Compare relative highs and lows across the three indices over 05:00-09:30 for the AM session and 12:00-15:00 for the PM session; when order flow is bullish compare the lows.",
+    "preconditions": [
+      "Three index charts available (ES, NQ, YM)"
+    ],
+    "trigger": "One index fails to make a matching low or high",
+    "entry": "In the direction the divergence implies, on a structure shift",
+    "stop_loss": "Beyond the divergent extreme",
+    "target": "Opposing liquidity",
+    "invalidation": "Divergence resolves without a structure shift",
+    "timeframes": {
+      "htf": "15m",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "NY AM",
+    "time_window": {
+      "ny": "05:00-09:30 (AM), 12:00-15:00 (PM)",
+      "london": "10:00-14:30, 17:00-20:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [
+      "SMT divergence"
+    ],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "wWCKTEhVp2o",
+        "title": "ICT Mentorship Core Content - Month 10 - Index Futures - AM Trend",
+        "published": null,
+        "timestamp": "00:07:28",
+        "link": "https://youtu.be/wWCKTEhVp2o?t=448"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "qZg_5bac518",
+        "title": "ICT Mentorship Core Content - Month 10 - Index Futures - PM Trend",
+        "published": null,
+        "timestamp": "00:07:25",
+        "link": "https://youtu.be/qZg_5bac518?t=445"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "wWCKTEhVp2o",
+        "title": "ICT Mentorship Core Content - Month 10 - Index Futures - AM Trend",
+        "published": null,
+        "timestamp": "00:08:31",
+        "link": "https://youtu.be/wWCKTEhVp2o?t=511"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 3,
+    "contradicts": [],
+    "notes": "Gives the operator's existing SMT step defined comparison windows rather than ad-hoc reading."
+  },
+  {
+    "rule_id": "NY-007",
+    "topic_bucket": "new_york_session",
+    "concept": "Daily Conditioning Profile",
+    "category": "bias",
+    "statement": "A typical day: London open runs stops and expands, 05:00-08:00 consolidates, 08:00-08:30 retraces, then New York either reverses or expands again.",
+    "preconditions": [],
+    "trigger": "Tracking which phase of the profile price is in",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "Price does not consolidate 05:00-08:00",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": "02:00-11:00",
+      "london": "07:00-16:00",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "XwYYWBttWro",
+        "title": "ICT Mentorship Core Content - Month 1 - How Market Makers Condition The Market",
+        "published": null,
+        "timestamp": "00:15:55",
+        "link": "https://youtu.be/XwYYWBttWro?t=955"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "A skeleton for the day that the session rules hang on."
+  },
+  {
+    "rule_id": "HTF-001",
+    "topic_bucket": "higher_timeframe",
+    "concept": "Open Float",
+    "category": "bias",
+    "statement": "Map where buy stops sit above old highs and sell stops below old lows on the daily chart; the side holding the larger pool is the side the market is reaching for, and that gives the daily bias.",
+    "preconditions": [
+      "Daily chart with old highs and lows marked"
+    ],
+    "trigger": "Identifying which pool is larger and unswept",
+    "entry": "",
+    "stop_loss": "",
+    "target": "The liquidity pool being reached for",
+    "invalidation": "The opposing pool is taken first",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "4h",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "BkmZgjuYREU",
+        "title": "ICT Mentorship Core Content - Month 05 - Open Float",
+        "published": null,
+        "timestamp": "00:22:55",
+        "link": "https://youtu.be/BkmZgjuYREU?t=1375"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "The closest thing the corpus offers to a decidable bias procedure."
+  },
+  {
+    "rule_id": "HTF-002",
+    "topic_bucket": "higher_timeframe",
+    "concept": "PD Array Matrix",
+    "category": "bias",
+    "statement": "Determine directional bias from the PD array matrix on the daily or 4-hour: whether price sits in premium or discount, and which arrays it is reaching for.",
+    "preconditions": [
+      "PD arrays mapped on daily and 4h"
+    ],
+    "trigger": "Price position relative to equilibrium",
+    "entry": "Long any short-term low violated below equilibrium when bias is bullish",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "Bias arrays are taken against the read",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "4h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "g7jchu4g31c",
+        "title": "ICT Mentorship Core Content - Month 09 -  Trading In Consolidations",
+        "published": null,
+        "timestamp": "00:20:02",
+        "link": "https://youtu.be/g7jchu4g31c?t=1202"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": ""
+  },
+  {
+    "rule_id": "HTF-003",
+    "topic_bucket": "higher_timeframe",
+    "concept": "Weekly Expansion",
+    "category": "bias",
+    "statement": "Do not force a daily bias every day; the objective is to determine the likely weekly expansion and trade the days that agree with it.",
+    "preconditions": [],
+    "trigger": "Weekly range and likely expansion direction assessed",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1W",
+      "mtf": "1D",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "koN1ge8bewI",
+        "title": "2022 ICT Mentorship Episode 40",
+        "published": null,
+        "timestamp": "00:20:54",
+        "link": "https://youtu.be/koN1ge8bewI?t=1254"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Explicitly against daily-bias-every-day: 'I'm not trying to get a daily bias every single day, I'm trying to determine the likely weekly expansion.' A no-trade permission as much as a bias rule."
+  },
+  {
+    "rule_id": "HTF-004",
+    "topic_bucket": "higher_timeframe",
+    "concept": "Array Transposition",
+    "category": "bias",
+    "statement": "Work top down: find the arrays on the higher timeframe, transpose them onto the daily, then trade only the arrays that are still active in the relevant premium or discount spectrum.",
+    "preconditions": [
+      "Weekly and monthly arrays identified"
+    ],
+    "trigger": "Price approaching a transposed daily array",
+    "entry": "At the active array",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "Array already mitigated and therefore inactive",
+    "timeframes": {
+      "htf": "1M",
+      "mtf": "1W",
+      "ltf": "1D"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "g--tikwaupk",
+        "title": "ICT Mentorship Core Content - Month 06 - Classic Swing Trading Approach",
+        "published": null,
+        "timestamp": "00:20:49",
+        "link": "https://youtu.be/g--tikwaupk?t=1249"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": ""
+  },
+  {
+    "rule_id": "HTF-005",
+    "topic_bucket": "higher_timeframe",
+    "concept": "Bias Commitment",
+    "category": "psychology",
+    "statement": "Once the bias is set for the day or timeframe, stay on that side; accept that the other side may also pay rather than switching mid-session.",
+    "preconditions": [
+      "Bias established"
+    ],
+    "trigger": "Counter-trend opportunity appears",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": null,
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "xGFCIUFxsbw",
+        "title": "Essentials To ICT Market Structure",
+        "published": null,
+        "timestamp": "00:32:42",
+        "link": "https://youtu.be/xGFCIUFxsbw?t=1962"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "'you are gonna stick to being a bull at this particular day'."
+  },
+  {
+    "rule_id": "HTF-006",
+    "topic_bucket": "higher_timeframe",
+    "concept": "Weekly Profile",
+    "category": "bias",
+    "statement": "Once the week's high or low forms - often a Wednesday reversal - stop referencing Sunday's opening price and work from the weekly profile instead.",
+    "preconditions": [
+      "Week in progress"
+    ],
+    "trigger": "Wednesday reversal forms the week's extreme",
+    "entry": "",
+    "stop_loss": "",
+    "target": "The remainder of the weekly profile",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1W",
+      "mtf": "1D",
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "-cXnnHjy9s0",
+        "title": "ICT Mentorship Core Content - Month 08 - Essentials To ICT Daytrading",
+        "published": null,
+        "timestamp": "00:39:11",
+        "link": "https://youtu.be/-cXnnHjy9s0?t=2351"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": ""
+  },
+  {
+    "rule_id": "HTF-007",
+    "topic_bucket": "higher_timeframe",
+    "concept": "Key Swing Points",
+    "category": "bias",
+    "statement": "Key swing points carry weight only where they coincide with higher timeframe levels; the overlap is what makes them tradeable.",
+    "preconditions": [
+      "HTF levels mapped"
+    ],
+    "trigger": "A key swing point forms at an HTF level",
+    "entry": "At the confluence",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "No HTF level present",
+    "timeframes": {
+      "htf": "1W",
+      "mtf": "1D",
+      "ltf": "4h"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "T0JyGdJ28fM",
+        "title": "ICT Forex - Trading The Key Swing Points",
+        "published": null,
+        "timestamp": "00:05:47",
+        "link": "https://youtu.be/T0JyGdJ28fM?t=347"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": ""
+  },
+  {
+    "rule_id": "SMC-001",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Market Structure Shift",
+    "category": "entry_mechanic",
+    "statement": "A market structure shift is confirmed when price sweeps a series of lows and then takes out the high that formed before that low; then look left for the highs still available as targets.",
+    "preconditions": [
+      "A run of lows swept"
+    ],
+    "trigger": "Price takes the high that preceded the swept low",
+    "entry": "On the shift, into the resulting fair value gap",
+    "stop_loss": "Below the swept low",
+    "target": "The highs identified to the left",
+    "invalidation": "Price fails to hold above the reclaimed high",
+    "timeframes": {
+      "htf": "15m",
+      "mtf": "5m",
+      "ltf": "1m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "NBBTRADER",
+        "video_id": "YFsn7BUMJ_s",
+        "title": "NBB Trader's Free Mentorship Video (Lesson 1)",
+        "published": null,
+        "timestamp": "00:20:17",
+        "link": "https://youtu.be/YFsn7BUMJ_s?t=1217"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "NBB's clearest mechanical definition - the most step-by-step statement of MSS in the corpus. [category recorded as 'trigger'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "SMC-002",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Shift vs Break",
+    "category": "bias",
+    "statement": "Distinguish a market structure shift from a market structure break: a shift is intraday and implies a draw in that direction; a break carries more weight.",
+    "preconditions": [],
+    "trigger": "Structure violated",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "nQfHZ2DEJ8c",
+        "title": "2022 ICT Mentorship Episode 3",
+        "published": null,
+        "timestamp": "00:02:51",
+        "link": "https://youtu.be/nQfHZ2DEJ8c?t=171"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Terminology matters here because the two are used interchangeably elsewhere in the retail space. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "SMC-003",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Equilibrium Rebalance",
+    "category": "management",
+    "statement": "Price at a premium or discount will first look to rebalance to the equilibrium of the recent range; equilibrium alone is a sufficient target.",
+    "preconditions": [
+      "Range high and low defined"
+    ],
+    "trigger": "Price at a deep premium or discount",
+    "entry": "At the discount (long) or premium (short)",
+    "stop_loss": "Beyond the range extreme",
+    "target": "Equilibrium (50%) of the range",
+    "invalidation": "Range extreme is broken",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "4h",
+      "ltf": "1h"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "Y1oxwc354oo",
+        "title": "ICT Mentorship Core Content - Month 05 - Trade Conditions & Setups",
+        "published": null,
+        "timestamp": "00:03:54",
+        "link": "https://youtu.be/Y1oxwc354oo?t=234"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "A conservative, fully mechanical target: 'if you buy at a real deep discount and just get back to equilibrium'. [category recorded as 'target'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "SMC-004",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Premium Short",
+    "category": "entry_model",
+    "statement": "A high-probability short is a return above equilibrium that also takes out an old high, running those stops before delivering back down.",
+    "preconditions": [
+      "Bearish bias",
+      "Range mapped with equilibrium marked"
+    ],
+    "trigger": "Price trades above equilibrium and takes an old high",
+    "entry": "Into the premium array after the stop run",
+    "stop_loss": "Above the high that was run",
+    "target": "A previous low / sell-side liquidity",
+    "invalidation": "Price holds above the swept high",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "YuefjnUKQdM",
+        "title": "ICT Mentorship Core Content - Month 1 - Equilibrium Vs. Premium",
+        "published": null,
+        "timestamp": "00:08:46",
+        "link": "https://youtu.be/YuefjnUKQdM?t=526"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Mirror of the discount long. Stated as 'really really good in terms of probabilities'."
+  },
+  {
+    "rule_id": "SMC-005",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Institutional Order Flow",
+    "category": "bias",
+    "statement": "Take day trades only in the direction of higher timeframe institutional order flow, and concentrate them Monday to Wednesday.",
+    "preconditions": [
+      "HTF institutional order flow determined"
+    ],
+    "trigger": "Intraday setup appears",
+    "entry": "Only if it agrees with HTF order flow",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "Setup opposes HTF order flow",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "1h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "cqf8nH54bb8",
+        "title": "ICT Mentorship Core Content - Month 09 - ICT Day Trade Routine",
+        "published": null,
+        "timestamp": "00:55:02",
+        "link": "https://youtu.be/cqf8nH54bb8?t=3302"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Also a weekday filter: 'we want to be looking to be buyer Monday Tuesday Wednesdays'. [category recorded as 'filter'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "SMC-006",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Opposing Direction Filter",
+    "category": "entry_model",
+    "statement": "The highest-odds setups come when the session first moves against the daily or 4-hour order flow; wait for that opposing move rather than entering with the obvious direction.",
+    "preconditions": [
+      "Daily or 4h order flow established"
+    ],
+    "trigger": "Session opens counter to that order flow (the Judas swing)",
+    "entry": "After the counter-move exhausts, into the PD array matrix objective",
+    "stop_loss": "Beyond the counter-move extreme",
+    "target": "Next PD array matrix objective",
+    "invalidation": "The counter-move sustains",
+    "timeframes": {
+      "htf": "1D",
+      "mtf": "4h",
+      "ltf": "15m"
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "_TNhWRPa6GA",
+        "title": "ICT Mentorship Core Content - Month 09 - The Sentiment Effect",
+        "published": null,
+        "timestamp": "00:01:15",
+        "link": "https://youtu.be/_TNhWRPa6GA?t=75"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Ties the Judas swing (LDN-004) to a bias filter."
+  },
+  {
+    "rule_id": "SMC-007",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Lunch Macro Draw",
+    "category": "liquidity",
+    "statement": "The New York lunch macro reaches for the first prominent liquidity pool formed after 10:00 - sell-side when bullish - so mark that pool from 10:00 forward.",
+    "preconditions": [
+      "10:00 New York passed",
+      "Prominent swing marked after 10:00"
+    ],
+    "trigger": "Lunch macro begins",
+    "entry": "",
+    "stop_loss": "",
+    "target": "First prominent liquidity pool formed after 10:00",
+    "invalidation": "Pool already taken before lunch",
+    "timeframes": {
+      "htf": "1h",
+      "mtf": "15m",
+      "ltf": "5m"
+    },
+    "session": "NY Lunch",
+    "time_window": {
+      "ny": "12:00-13:30",
+      "london": "17:00-18:30",
+      "dst_sensitive": true
+    },
+    "instruments": [
+      "indices"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "dA2CHAN1DzY",
+        "title": "Trading Premarket and Regular Session Liquidity",
+        "published": null,
+        "timestamp": "00:15:45",
+        "link": "https://youtu.be/dA2CHAN1DzY?t=945"
+      },
+      {
+        "channel": "ICT",
+        "video_id": "dA2CHAN1DzY",
+        "title": "Trading Premarket and Regular Session Liquidity",
+        "published": null,
+        "timestamp": "00:08:28",
+        "link": "https://youtu.be/dA2CHAN1DzY?t=508"
+      }
+    ],
+    "confidence": "high",
+    "mentions": 2,
+    "contradicts": [],
+    "notes": "Manual captions on both. Unusually mechanical: 'find 10:00 in the morning and walk forward until you see a prominent swing low'. Complements SB-007. [category recorded as 'target'; the schema has no filter/trigger/target category - see GAPS.md]"
+  },
+  {
+    "rule_id": "SMC-008",
+    "topic_bucket": "smart_money_concepts",
+    "concept": "Terminology",
+    "category": "psychology",
+    "statement": "'Smart money concepts' is ICT's own term for his material; treat third-party SMC content as a derivative rather than a source.",
+    "preconditions": [],
+    "trigger": "",
+    "entry": "",
+    "stop_loss": "",
+    "target": "",
+    "invalidation": "",
+    "timeframes": {
+      "htf": null,
+      "mtf": null,
+      "ltf": null
+    },
+    "session": "any",
+    "time_window": {
+      "ny": null,
+      "london": null,
+      "dst_sensitive": false
+    },
+    "instruments": [
+      "any"
+    ],
+    "confluences_required": [],
+    "sources": [
+      {
+        "channel": "ICT",
+        "video_id": "vuBRMFhFZAY",
+        "title": "ICT Mentorship 2023 - One Trading Setup For Life",
+        "published": null,
+        "timestamp": "00:08:50",
+        "link": "https://youtu.be/vuBRMFhFZAY?t=530"
+      }
+    ],
+    "confidence": "medium",
+    "mentions": 1,
+    "contradicts": [],
+    "notes": "Relevant to sourcing: 'when you hear SMC it's my concepts'."
   }
 ]
