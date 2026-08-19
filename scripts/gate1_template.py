@@ -12,8 +12,29 @@ Usage:
 
 import json
 import re
+import shutil
 import subprocess
 import sys
+
+
+def ensure_ytdlp():
+    """Install yt-dlp if it is not already present.
+
+    A fresh Colab runtime has no yt-dlp, and "Disconnect and delete runtime"
+    (the standard fix for a bot challenge) wipes it again. Making the script
+    self-sufficient removes a step that is easy to forget and produces a
+    confusing failure when it is.
+    """
+    if shutil.which("yt-dlp"):
+        return
+    print("yt-dlp not found -- installing, takes about 20 seconds...")
+    proc = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "-q", "--upgrade", "yt-dlp"],
+        capture_output=True, text=True)
+    if not shutil.which("yt-dlp"):
+        sys.exit("Could not install yt-dlp automatically. Run this in a cell first:\n"
+                 "    !pip install -U yt-dlp\n\n" + (proc.stderr or "")[:600])
+    print("  installed.\n")
 
 # --------------------------------------------------------------- config ----
 
@@ -53,7 +74,7 @@ def run_ytdlp(args, timeout=1800):
             ["yt-dlp", "--ignore-config", "--no-warnings", "--no-progress"] + args,
             capture_output=True, text=True, timeout=timeout)
     except FileNotFoundError:
-        sys.exit("yt-dlp is not installed. Run:  !pip install -U yt-dlp")
+        sys.exit("yt-dlp vanished mid-run. Rerun the cell.")
     except subprocess.TimeoutExpired:
         return subprocess.CompletedProcess(args, 1, "", "timed out")
 
@@ -156,6 +177,8 @@ def identify_channel(channel_id):
 def main():
     deep = "--deep-scan" in sys.argv
     line = "=" * 68
+
+    ensure_ytdlp()
 
     print("Checking YouTube is reachable...")
     try:
