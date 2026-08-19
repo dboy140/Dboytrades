@@ -109,6 +109,14 @@ daylight-saving dates differ, and for about four weeks a year it is **+4h**.
 happens an hour earlier in UK time.** Set your platform to New York time and
 avoid the conversion entirely.
 
+**Exact +4h windows (verified against the IANA timezone database):**
+
+| Year | Spring | Autumn |
+| --- | --- | --- |
+| 2026 | 8 Mar – 29 Mar | 25 Oct – 1 Nov |
+
+Regenerate for later years with `python -m scripts.dst_table`.
+
 ### Windows
 
 | Window | NY | UK (+5) | UK (+4) ⚠️ | Rule |
