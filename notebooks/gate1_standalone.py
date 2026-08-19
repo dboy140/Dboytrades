@@ -155,14 +155,39 @@ def search_videos(query, limit):
     return _jsonlines(proc.stdout)
 
 
-def video_details(video_id):
-    """Full metadata for one video: uploader name and description."""
-    proc = run_ytdlp(["--dump-json", "--skip-download",
-                      "https://www.youtube.com/watch?v=" + video_id], timeout=120)
+def channel_info(channel_id):
+    """Channel name / handle / subscriber count via --dump-single-json.
+
+    Deliberately avoids fetching an individual video page: on datacentre IPs
+    (Colab) YouTube serves channel listings but challenges per-video requests,
+    so anything that opens a video is unreliable there.
+    """
+    url = "https://www.youtube.com/channel/%s/videos" % channel_id
+    proc = run_ytdlp(["--flat-playlist", "--dump-single-json",
+                      "--playlist-end", "3", url], timeout=180)
     if is_blocked(proc.stderr):
         raise RuntimeError("BLOCKED_BY_YOUTUBE")
-    rows = _jsonlines(proc.stdout)
-    return rows[0] if rows else None
+    try:
+        return json.loads(proc.stdout)
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
+def channel_search(channel_id, query, limit):
+    """Search WITHIN a channel. YouTube matches descriptions server-side.
+
+    This is how descriptions get covered without opening any video page: one
+    listing request per keyword instead of one video fetch per unmatched
+    video -- roughly 90 requests rather than 800, and it uses the only call
+    that works reliably from a datacentre IP.
+    """
+    from urllib.parse import quote
+    url = "https://www.youtube.com/channel/%s/search?query=%s" % (channel_id, quote(query))
+    proc = run_ytdlp(["--flat-playlist", "--dump-json",
+                      "--playlist-end", str(limit), url], timeout=300)
+    if is_blocked(proc.stderr):
+        raise RuntimeError("BLOCKED_BY_YOUTUBE")
+    return _jsonlines(proc.stdout)
 
 
 def to_video(entry, tab=""):
@@ -184,34 +209,30 @@ def to_video(entry, tab=""):
 
 
 def identify_channel(channel_id):
-    """Resolve a channel's real name.
-
-    Flat enumeration often returns an empty channel name, which is useless for
-    confirming identity -- so fall back to full metadata on one video, where
-    the uploader is always present.
-    """
+    """Resolve a channel's real name, without opening any video page."""
+    info = {"channel_id": channel_id, "name": "(unresolved)", "handle": "",
+            "subscribers": None, "sampled": 0, "titles": []}
     try:
-        sample = enumerate_tab(channel_id, "videos", 3)
+        blob = channel_info(channel_id)
     except RuntimeError:
         raise
     except Exception as exc:
-        return {"channel_id": channel_id, "error": str(exc)[:200]}
-
-    info = {"channel_id": channel_id, "sampled": len(sample),
-            "titles": [str(e.get("title") or "")[:80] for e in sample[:3]]}
-    if not sample:
-        info["name"] = "(no videos -- channel empty, wrong id, or removed)"
+        info["error"] = str(exc)[:200]
         return info
 
-    vid = str(sample[0].get("id") or "")
-    detail = video_details(vid) if vid else None
-    if detail:
-        info["name"] = str(detail.get("uploader") or detail.get("channel") or "(unknown)")
-        info["handle"] = str(detail.get("uploader_id") or "")
-        info["channel_url"] = str(detail.get("channel_url") or "")
-        info["subscribers"] = detail.get("channel_follower_count")
-    else:
-        info["name"] = "(could not resolve)"
+    if not blob:
+        info["name"] = "(no data -- wrong id, empty, or removed channel)"
+        return info
+
+    entries = [e for e in (blob.get("entries") or []) if isinstance(e, dict)]
+    info["sampled"] = len(entries)
+    info["titles"] = [str(e.get("title") or "")[:80] for e in entries[:3]]
+    name = (blob.get("channel") or blob.get("uploader") or blob.get("title") or "")
+    info["name"] = str(name) or "(name not returned)"
+    info["handle"] = str(blob.get("uploader_id") or blob.get("channel_url") or "")
+    info["subscribers"] = blob.get("channel_follower_count")
+    if not entries:
+        info["name"] += "  [NO VIDEOS LISTED]"
     return info
 
 
@@ -271,30 +292,57 @@ def main():
 
     recovered = 0
     if deep and excluded:
-        print("\nDeep scan: reading descriptions of %d unmatched videos." % len(excluded))
-        print("This takes roughly %d-%d minutes. Progress every 25:"
-              % (len(excluded) // 60, len(excluded) // 20))
-        still_out = []
-        for i, v in enumerate(excluded, 1):
-            if i % 25 == 0:
-                print("  %d/%d, recovered %d" % (i, len(excluded), recovered), flush=True)
-            try:
-                detail = video_details(v["video_id"])
-            except RuntimeError:
-                print("  blocked during deep scan -- keeping what we have")
-                still_out += excluded[i - 1:]
-                break
-            desc = str((detail or {}).get("description") or "")[:4000]
-            b = match_buckets(v["title"], desc)
-            if b:
-                v["description"] = desc
-                v["buckets"] = b
-                kept.append(v)
-                recovered += 1
+        # Descriptions are covered by searching WITHIN the channel rather than
+        # opening each video: YouTube matches description text server-side, and
+        # channel listings are the one request type that survives a datacentre
+        # IP. Roughly 90 requests instead of 800, and far faster.
+        by_id = {v["video_id"]: v for v in excluded}
+        print("\nDescription scan: searching the channel for each keyword.")
+        print("About %d searches, a few minutes. Progress every 10:"
+              % sum(len(k) for k in BUCKETS.values()))
+        try:
+            check = channel_search(ICT_CHANNEL, "fair value gap", 5)
+            if not check:
+                print("  WARNING: channel search returned nothing for a keyword")
+                print("  that matched 16 videos by title. The search endpoint may")
+                print("  not be working -- description recovery will find nothing.")
+                print("  Report this and I will switch approach.")
             else:
-                still_out.append(v)
-        excluded = still_out
-        print("  deep scan recovered %d videos" % recovered)
+                print("  search endpoint OK (%d results on the probe)" % len(check))
+        except RuntimeError:
+            print("  blocked on the probe search -- skipping description scan")
+            deep = False
+        except Exception as exc:
+            print("  probe failed (%s) -- continuing anyway" % str(exc)[:80])
+        done = 0
+        hit_block = False
+        for bucket_name, keywords in BUCKETS.items():
+            if hit_block:
+                break
+            for kw in keywords:
+                done += 1
+                if done % 10 == 0:
+                    print("  %d searches, recovered %d" % (done, recovered), flush=True)
+                try:
+                    results = channel_search(ICT_CHANNEL, kw, 40)
+                except RuntimeError:
+                    print("  blocked during search -- keeping what we have")
+                    hit_block = True
+                    break
+                except Exception:
+                    continue
+                for e in results:
+                    vid = str(e.get("id") or "")
+                    v = by_id.get(vid)
+                    if v is not None and bucket_name not in v["buckets"]:
+                        if not v["buckets"]:
+                            recovered += 1
+                        v["buckets"].append(bucket_name)
+                        v["found_via"] = "channel_search:" + kw
+        moved = [v for v in excluded if v["buckets"]]
+        excluded = [v for v in excluded if not v["buckets"]]
+        kept += moved
+        print("  recovered %d videos via description search" % recovered)
 
     print("\nListing NBBTRADER videos...")
     nbb, seen_n = [], set()
