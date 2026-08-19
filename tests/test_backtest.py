@@ -173,3 +173,31 @@ class TestSignalCoherence:
         thin = Signal(0, "X", "long", entry=100, stop=96, target=102, rule_ids=["R"])
         assert not _is_coherent(thin, 2.0)
         assert _is_coherent(thin, 0.4)
+
+
+class TestExcursionCaps:
+    """You exit at your stop and your target; excursion beyond either is not
+    yours. Uncapped, MAE read -1.93R on trades that lost exactly 1R."""
+
+    def test_mae_capped_at_the_stop(self):
+        bars = mk([
+            (100, 101, 99, 100),
+            (100, 100.5, 99.5, 100),   # fill at 100
+            (100, 100.5, 80, 85),       # blows way past the 96 stop
+        ])
+        sig = Signal(0, "X", "long", entry=100, stop=96, target=112, rule_ids=["R"])
+        t = run(bars, const(0, sig)).trades[0]
+        assert t.exit_reason == "stop"
+        assert t.r_multiple == pytest.approx(-1.0)
+        assert t.mae == pytest.approx(-1.0)
+
+    def test_winner_mae_is_reported_separately(self):
+        bars = mk([
+            (100, 101, 99, 100), (100, 100.5, 99.5, 100),
+            (100, 104, 98, 103), (103, 113, 102, 112),
+        ])
+        sig = Signal(0, "X", "long", entry=100, stop=96, target=112, rule_ids=["R"])
+        res = run(bars, const(0, sig))
+        s = res.stats()
+        assert s["avg_mae_r_winners"] == pytest.approx(-0.5)
+        assert s["avg_mfe_r_losers"] is None

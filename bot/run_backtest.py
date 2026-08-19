@@ -17,8 +17,49 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from .backtest import run
-from .bars import UTC, Bar
+from .bars import NY, UTC, Bar
+from .bias import daily_bias
 from .signals import ote, silver_bullet
+
+
+def to_daily(bars: list[Bar]) -> list[Bar]:
+    """Aggregate to daily bars on New York calendar days.
+
+    The bias rules are daily-chart rules, and the sessions they gate are New
+    York sessions, so the day boundary must be New York's rather than UTC's.
+    """
+    out: list[Bar] = []
+    cur: list[Bar] = []
+    day = None
+    for b in bars:
+        d = b.ny.date()
+        if day is None:
+            day = d
+        if d != day:
+            out.append(Bar(cur[0].ts, cur[0].open, max(x.high for x in cur),
+                           min(x.low for x in cur), cur[-1].close,
+                           sum(x.volume for x in cur)))
+            cur, day = [], d
+        cur.append(b)
+    if cur:
+        out.append(Bar(cur[0].ts, cur[0].open, max(x.high for x in cur),
+                       min(x.low for x in cur), cur[-1].close,
+                       sum(x.volume for x in cur)))
+    return out
+
+
+def build_daily_bias_lookup(bars: list[Bar], **kw) -> dict:
+    """date -> bias for that day, computed from the PREVIOUS day's close.
+
+    Using the same day's completed bar would be lookahead: the bias must be
+    knowable before the session it gates.
+    """
+    daily = to_daily(bars)
+    lookup: dict = {}
+    for i in range(len(daily) - 1):
+        res = daily_bias(daily, i, **kw)
+        lookup[daily[i + 1].ny.date()] = res
+    return lookup
 
 
 def load_csv(path: str) -> list[Bar]:
@@ -47,8 +88,10 @@ def main(argv: list[str] | None = None) -> int:
                     choices=["NAS100", "EURUSD", "GBPUSD", "XAUUSD"])
     ap.add_argument("--setup", default="silver_bullet",
                     choices=["silver_bullet", "ote"])
-    ap.add_argument("--bias", choices=["long", "short"],
-                    help="required for silver_bullet: HTF bias is not automatable (GAPS G-07)")
+    ap.add_argument("--bias", choices=["long", "short", "auto"],
+                    help="required for silver_bullet. 'auto' uses the HTF-001 "
+                         "heuristic in bot/bias.py, which is UNSOURCED - see its "
+                         "module docstring before trusting it (GAPS G-07)")
     ap.add_argument("--displacement-multiple", type=float, default=1.5)
     ap.add_argument("--min-rr", type=float, default=1.0)
     ap.add_argument("--json", action="store_true")
@@ -66,10 +109,25 @@ def main(argv: list[str] | None = None) -> int:
                 "(GAPS G-07), so the engine refuses to guess it rather than inventing "
                 "a rule and attributing it to the source."
             )
-        def strategy(bs, i):
-            return silver_bullet(bs, i, args.instrument, args.bias,
-                                 displacement_multiple=args.displacement_multiple,
-                                 min_rr=args.min_rr)
+        if args.bias == "auto":
+            lookup = build_daily_bias_lookup(bars)
+            decided = sum(1 for r in lookup.values() if r.direction)
+            print(f"\nAutomated bias (UNSOURCED heuristic, see bot/bias.py):")
+            print(f"  {decided} of {len(lookup)} days got a bias; "
+                  f"{len(lookup) - decided} were left flat")
+
+            def strategy(bs, i):
+                res = lookup.get(bs[i].ny.date())
+                if res is None or res.direction is None:
+                    return None      # HTF-003: no bias is a valid outcome
+                return silver_bullet(bs, i, args.instrument, res.direction,
+                                     displacement_multiple=args.displacement_multiple,
+                                     min_rr=args.min_rr)
+        else:
+            def strategy(bs, i):
+                return silver_bullet(bs, i, args.instrument, args.bias,
+                                     displacement_multiple=args.displacement_multiple,
+                                     min_rr=args.min_rr)
     else:
         def strategy(bs, i):
             return ote(bs, i, args.instrument, min_rr=args.min_rr)

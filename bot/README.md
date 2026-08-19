@@ -57,3 +57,35 @@ These are exposed, not buried, because the corpus does not quantify them:
 | `find_fvgs(min_size=)` | 0.0 | no minimum gap size is stated |
 
 Tune per instrument in the backtest and record what you chose.
+
+## Automated bias — read this before using it
+
+`bot/bias.py` implements a daily bias from `HTF-001`, wired in as `--bias auto`.
+
+**It is not ICT's method.** `HTF-001` says the side holding the *larger* pool is
+the draw. It never says what makes a pool larger, and nothing in the corpus
+does — that is `GAPS` G-07. The scoring is mine:
+
+```
+score(pool) = clustered_swings / (1 + distance_in_average_ranges)
+bias        = the side that outscores the other by >= 1.30x
+```
+
+Two parts of that do follow from cited material: equal highs and equal lows are
+treated throughout the corpus as liquidity markers, so a cluster is scored as a
+deeper pool; and ICT criticises liquidity tools for surfacing levels "not so
+pertinent to right now", which supports weighting by proximity. **The numbers
+themselves — 1.30x, the 0.15% cluster tolerance, the fractal width — are
+arbitrary and exposed as parameters so they stay visible.**
+
+Every `BiasResult` carries `unsourced=True` so it cannot be mistaken for a
+cited rule.
+
+**It refuses often, and that is deliberate.** `HTF-003` argues against forcing a
+daily bias at all, so the heuristic returns `None` when neither side clears the
+margin or there is too little structure. On a 25-day synthetic sample it gave a
+bias on 5 days and stayed flat on 20. If that feels too quiet, lower `margin` —
+but lower it in a backtest, not in live trading.
+
+Bias is computed from the **previous** day's completed bar. Using the same day's
+would be lookahead: the bias has to be knowable before the session it gates.

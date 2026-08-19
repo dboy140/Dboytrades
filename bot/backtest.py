@@ -91,6 +91,14 @@ class Result:
             "max_drawdown_r": round(dd, 2),
             "avg_mae_r": round(statistics.mean(t.mae for t in closed), 3),
             "avg_mfe_r": round(statistics.mean(t.mfe for t in closed), 3),
+            # The actionable one: how close winners came to the stop. Small and
+            # consistent means stops are wider than they need to be.
+            "avg_mae_r_winners": (round(statistics.mean(
+                t.mae for t in closed if t.r_multiple > 0), 3)
+                if any(t.r_multiple > 0 for t in closed) else None),
+            "avg_mfe_r_losers": (round(statistics.mean(
+                t.mfe for t in closed if t.r_multiple <= 0), 3)
+                if any(t.r_multiple <= 0 for t in closed) else None),
             "signals_generated": self.signals_generated,
             "signals_not_filled": self.signals_not_filled,
         }
@@ -143,6 +151,11 @@ def run(bars: list[Bar], strategy, *, max_open: int = 1,
                 t.exit_index, t.exit_ts = i, bar.ts
                 if hit_stop:
                     t.exit_price, t.exit_reason = t.stop, "stop"
+                    # Symmetric with the MFE cap below: you are out at the stop,
+                    # so excursion beyond it is not loss you took. Leaving it in
+                    # made average MAE read -1.93R on trades that lost exactly
+                    # 1R, which invites widening stops for no reason.
+                    t.mae = max(t.mae, -1.0)
                 else:
                     t.exit_price, t.exit_reason = t.target, "target"
                     # A limit exit cannot fill better than the target, so cap
