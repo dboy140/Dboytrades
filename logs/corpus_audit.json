@@ -1,0 +1,72 @@
+{
+  "audited": 145,
+  "kept": 139,
+  "review": [
+    {
+      "video_id": "gzmZ9VOGPAY",
+      "title": "NBB Trader & Ali khan ICT: Scam or Legit Guru? Let's Find Out!",
+      "channel": "Andre Mcclendon",
+      "segments": 959,
+      "flags": [
+        "third_party_commentary"
+      ]
+    }
+  ],
+  "quarantined": [
+    {
+      "video_id": "EkthI6VHqfA",
+      "title": "NBB trader mentorship | omor nbb trading course |#crypto #ict #trendingvideo",
+      "channel": "Wonderful Spanish",
+      "segments": 3,
+      "flags": [
+        "too_short"
+      ],
+      "english_ratio": 0.15
+    },
+    {
+      "video_id": "MZVhI4tjxvw",
+      "title": "Nbb trader course | omor nbb ict mentorship #forex #ict #trendingvideo ",
+      "channel": "Zelle world",
+      "segments": 7,
+      "flags": [
+        "too_short"
+      ],
+      "english_ratio": 0.103
+    },
+    {
+      "video_id": "R9y-H-QLCt4",
+      "title": "NBB Podcast - Episode 23: I\u2019m A Ramblin Man",
+      "channel": "Northern Border Banter Podcast",
+      "segments": 2780,
+      "flags": [
+        "acronym_collision"
+      ],
+      "english_ratio": 0.18
+    },
+    {
+      "video_id": "S1QkskL97BA",
+      "title": "Nbb trader lastest mentorship | omor nbb trading course #forex #trading #viralvideo ",
+      "channel": "Wolf alpha",
+      "segments": 7,
+      "flags": [
+        "too_short"
+      ],
+      "english_ratio": 0.103
+    },
+    {
+      "video_id": "yD34zRbhG78",
+      "title": "O MELHOR TRADER SMART MONEY SMC - ICT do Mundo - NBB Trader",
+      "channel": "TRADER no FLOW",
+      "segments": 1833,
+      "flags": [
+        "not_english"
+      ],
+      "english_ratio": 0.001
+    }
+  ],
+  "caption_kinds": {
+    "auto": 112,
+    "manual": 24,
+    "unknown": 9
+  }
+}
