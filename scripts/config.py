@@ -75,6 +75,8 @@ CHANNELS: list[Channel] = [
         channel_id="UCtjxa77NqamhVC8atV85Rog",
         handle="@InnerCircleTrader",
         scope="filtered",
+        provenance="confirmed_live_2026-08-19",
+        verified=True,
         note="Eight topic buckets only. Enumerate the full catalogue for "
         "metadata (cheap), but only pull transcripts for bucket matches.",
     ),
@@ -82,17 +84,22 @@ CHANNELS: list[Channel] = [
         key="NBBTRADER",
         display_name="NBBTRADER",
         channel_id="UCo6TS8uarO5r562d4lESg9w",
-        handle=None,
+        handle="@NBBTRADER",
         scope="complete",
-        note="Complete catalogue: long-form, Shorts, lives.",
+        provenance="confirmed_live_2026-08-19",
+        verified=True,
+        note="Confirmed: @NBBTRADER, 2040 subscribers. Only 16 videos and no "
+        "Shorts on his own channel, so the bulk of his substantive material is "
+        "in guest appearances elsewhere -- exactly as the brief predicted.",
     ),
 ]
 
-# A second similarly-named channel exists. Discovery probes both and reports
-# samples from each so the right one can be promoted before scraping.
+# Resolved 2026-08-19: the first id is the live @NBBTRADER channel; the second
+# returned no data at all (removed, empty or simply wrong). Kept here so the
+# check is repeatable and the ruled-out id is not silently forgotten.
 NBB_CANDIDATE_IDS = [
-    "UCo6TS8uarO5r562d4lESg9w",  # primary per operator
-    "UCmtJ3lDd2fjt-IMf6lfzlcA",  # alternate to rule out
+    "UCo6TS8uarO5r562d4lESg9w",  # CONFIRMED @NBBTRADER
+    "UCmtJ3lDd2fjt-IMf6lfzlcA",  # RULED OUT -- no data
 ]
 
 # NBB's guest appearances live on other people's channels, so they cannot be
