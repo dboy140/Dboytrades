@@ -190,7 +190,7 @@ def channel_search(channel_id, query, limit):
     return _jsonlines(proc.stdout)
 
 
-def to_video(entry, tab=""):
+def to_video(entry, tab="", position=0):
     vid = str(entry.get("id") or "")
     if not re.fullmatch(r"[A-Za-z0-9_-]{11}", vid):
         return None
@@ -205,6 +205,10 @@ def to_video(entry, tab=""):
         "is_short": tab == "shorts",
         "description": "",
         "buckets": [],
+        # Channel listings come back newest-first, so position is the recency
+        # proxy. Upload dates are not in flat enumeration and fetching them
+        # would mean opening every video page, which datacentre IPs cannot do.
+        "position": position,
     }
 
 
@@ -273,8 +277,8 @@ def main():
         except RuntimeError:
             sys.exit("BLOCKED partway through. Recycle the runtime and retry.")
     ict, seen = [], set()
-    for e in ict_raw:
-        v = to_video(e)
+    for idx, e in enumerate(ict_raw):
+        v = to_video(e, position=idx)
         if v and v["video_id"] not in seen:
             seen.add(v["video_id"])
             ict.append(v)
@@ -348,8 +352,8 @@ def main():
     nbb, seen_n = [], set()
     for tab in ("videos", "shorts", "streams"):
         try:
-            for e in enumerate_tab(NBB_CANDIDATES[0], tab, NBB_MAX):
-                v = to_video(e, tab)
+            for idx, e in enumerate(enumerate_tab(NBB_CANDIDATES[0], tab, NBB_MAX)):
+                v = to_video(e, tab, position=idx)
                 if v and v["video_id"] not in seen_n:
                     seen_n.add(v["video_id"])
                     nbb.append(v)

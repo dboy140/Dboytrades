@@ -17,6 +17,17 @@ from . import config as cfg
 
 TEMPLATE = Path(__file__).resolve().parent / "gate1_template.py"
 OUT = Path(__file__).resolve().parents[1] / "notebooks" / "gate1_standalone.py"
+TEMPLATE2 = Path(__file__).resolve().parent / "gate2_template.py"
+OUT2 = Path(__file__).resolve().parents[1] / "notebooks" / "gate2_standalone.py"
+
+# Transcript actor candidates, tried in order by the built-in bake-off.
+APIFY_ACTORS = [
+    "automation-lab~youtube-transcript",
+    "topaz_sharingan~youtube-transcript-scraper",
+    "openclawmara~youtube-transcript-scraper",
+    "pintostudio~youtube-transcript-scraper",
+    "visita~youtube-scraper",
+]
 
 
 def render_buckets() -> str:
@@ -59,6 +70,13 @@ def main() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(text, encoding="utf-8")
     print(f"wrote {OUT} ({len(text.splitlines())} lines)")
+
+    text2 = TEMPLATE2.read_text(encoding="utf-8")
+    text2 = text2.replace("@@APIFY_ACTORS@@", json.dumps(APIFY_ACTORS, indent=4))
+    if "@@" in text2:
+        raise SystemExit("gate2 template has unresolved markers")
+    OUT2.write_text(text2, encoding="utf-8")
+    print(f"wrote {OUT2} ({len(text2.splitlines())} lines)")
     return 0
 
 
