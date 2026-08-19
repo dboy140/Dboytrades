@@ -17,57 +17,14 @@ import sys
 
 # --------------------------------------------------------------- config ----
 
-ICT_CHANNEL = "UCtjxa77NqamhVC8atV85Rog"
-NBB_CANDIDATES = ["UCo6TS8uarO5r562d4lESg9w", "UCmtJ3lDd2fjt-IMf6lfzlcA"]
-ICT_MAX = 1200
-NBB_MAX = 1500
-GUEST_QUERIES = ["NBBTRADER", "NBB trader interview", "NBB trader podcast", "NBBTRADER Words of Rizdom", "Words of Rizdom trading NBB", "NBB trader strategy explained"]
-SEARCH_MAX = 30
+ICT_CHANNEL = @@ICT_CHANNEL@@
+NBB_CANDIDATES = @@NBB_CANDIDATES@@
+ICT_MAX = @@ICT_MAX@@
+NBB_MAX = @@NBB_MAX@@
+GUEST_QUERIES = @@GUEST_QUERIES@@
+SEARCH_MAX = @@SEARCH_MAX@@
 
-BUCKETS = {
-    "Money Maker Model (MMxM)": [
-        "money maker model", "MMxM", "market maker model", "market maker buy model",
-        "MMBM", "market maker sell model", "MMSM", "smart money reversal",
-        "original consolidation", "low resistance liquidity run",
-        "high resistance liquidity run", "resistance liquidity run",
-        "smart money reversals",
-    ],
-    "ICT Silver Bullet": [
-        "silver bullet", "ICT silver bullet", "silver bullet 10am",
-        "silver bullet 3am", "silver bullet 2pm", "silver bullet setup",
-        "silver bullet strategy",
-    ],
-    "Fair Value Gaps": [
-        "fair value gap", "FVG", "imbalance", "balanced price range", "BPR",
-        "consequent encroachment", "liquidity void", "inefficiency", "inefficiencies",
-    ],
-    "Inversion Fair Value Gaps": [
-        "inversion fair value gap", "IFVG", "inverted fair value gap", "inversion FVG",
-        "FVG inversion",
-    ],
-    "London Session": [
-        "London killzone", "London open", "London session", "London open killzone",
-        "London judas swing", "London close", "LDN killzone", "LDN open",
-        "LDN session", "judas swing",
-    ],
-    "New York Session": [
-        "New York killzone", "New York open", "New York session", "NY AM session",
-        "NY PM session", "NY lunch", "opening range gap", "New York AM", "New York PM",
-        "NY AM", "NY PM", "NY killzone", "NY open", "NY session",
-        "New York AM session", "New York PM session", "AM session", "PM session",
-        "ORG", "RTH ORG",
-    ],
-    "Higher Timeframe": [
-        "higher timeframe bias", "HTF bias", "daily bias", "weekly profile",
-        "monthly bias", "HTF narrative", "top down analysis",
-    ],
-    "Smart Money Concepts": [
-        "smart money concepts", "SMC", "institutional order flow", "IPDA",
-        "order block", "market structure shift", "displacement",
-        "premium and discount", "dealing range", "buyside liquidity",
-        "sellside liquidity",
-    ],
-}
+@@BUCKETS@@
 
 # ------------------------------------------------------------- matching ----
 

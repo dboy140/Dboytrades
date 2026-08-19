@@ -147,6 +147,10 @@ ICT_BUCKETS: list[Bucket] = [
             "MMBM", "market maker sell model", "MMSM", "smart money reversal",
             "original consolidation", "low resistance liquidity run",
         ],
+        extra_keywords=[
+            "high resistance liquidity run", "resistance liquidity run",
+            "smart money reversals",
+        ],
     ),
     Bucket(
         "silver_bullet",
@@ -163,6 +167,7 @@ ICT_BUCKETS: list[Bucket] = [
             "fair value gap", "FVG", "imbalance", "balanced price range", "BPR",
             "consequent encroachment", "liquidity void",
         ],
+        extra_keywords=["inefficiency", "inefficiencies"],
     ),
     Bucket(
         "inversion_fair_value_gaps",
@@ -191,6 +196,7 @@ ICT_BUCKETS: list[Bucket] = [
         extra_keywords=[
             "New York AM", "New York PM", "NY AM", "NY PM", "NY killzone",
             "NY open", "NY session", "New York AM session", "New York PM session",
+            "AM session", "PM session", "ORG", "RTH ORG",
         ],
     ),
     Bucket(

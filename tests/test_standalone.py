@@ -44,6 +44,23 @@ class TestNoDrift:
         assert standalone.NBB_MAX == cfg.NBB_ENUMERATION_MAX
 
 
+class TestGeneratedFileIsFresh:
+    def test_regenerating_produces_no_diff(self):
+        """The committed standalone must match what the generator emits now.
+
+        Without this, a config change could ship while the pasted-into-Colab
+        copy still carries the old keywords.
+        """
+        import subprocess, sys
+        before = _PATH.read_text()
+        subprocess.run([sys.executable, "-m", "scripts.gen_standalone"],
+                       cwd=_PATH.parents[1], capture_output=True, check=True)
+        assert _PATH.read_text() == before, (
+            "notebooks/gate1_standalone.py is stale -- "
+            "run: python -m scripts.gen_standalone"
+        )
+
+
 class TestSameMatchingBehaviour:
     CASES = [
         "ICT Silver Bullet Strategy",
