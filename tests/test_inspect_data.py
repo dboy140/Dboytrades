@@ -123,3 +123,40 @@ class TestProfile:
     def test_hourly_profile_peaks_at_the_open(self):
         prof = hourly_range_profile(spiky_bars(0))
         assert max(prof, key=prof.get) == 13   # 09:30 NY in June == 13:30 UTC
+
+
+class TestInferenceRefusesWhenItCannotKnow:
+    """A two-hour file reported a confident nine-hour shift before this guard.
+    A tool built to catch wrong-but-plausible data must not produce
+    wrong-but-plausible output itself."""
+
+    def test_short_file_is_inconclusive(self):
+        two_hours = spiky_bars(0, days=1)[:120]
+        offset, diag = infer_ny_offset(two_hours)
+        assert diag["confident"] is False
+        assert offset == 0
+        assert "daily cycle" in diag["reason"]
+
+    def test_single_day_is_inconclusive(self):
+        offset, diag = infer_ny_offset(spiky_bars(0, days=1))
+        assert diag["confident"] is False
+        assert offset == 0
+
+    def test_flat_data_is_inconclusive_even_when_long(self):
+        """Plenty of bars but no identifiable open: still refuse."""
+        from datetime import datetime as _dt
+        flat = [Bar(_dt(2026, 6, 1, tzinfo=UTC) + timedelta(minutes=i),
+                    100, 100.5, 99.5, 100) for i in range(60 * 24 * 6)]
+        offset, diag = infer_ny_offset(flat)
+        assert diag["confident"] is False
+        assert offset == 0
+
+    def test_sufficient_data_is_confident(self):
+        offset, diag = infer_ny_offset(spiky_bars(0, days=8))
+        assert diag["confident"] is True
+        assert offset == 0
+
+    def test_sufficient_data_still_detects_a_real_shift(self):
+        offset, diag = infer_ny_offset(spiky_bars(3, days=8))
+        assert diag["confident"] is True
+        assert offset == 3

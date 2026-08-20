@@ -63,11 +63,39 @@ def build_daily_bias_lookup(bars: list[Bar], **kw) -> dict:
     return lookup
 
 
+def _timestamp_key(fieldnames: list[str]) -> str:
+    """Find the timestamp column.
+
+    Exports name it inconsistently. Dukascopy-style files label it with the
+    timezone itself ("Etc/UTC", "UTC", "Europe/London"), which is a useful
+    signal rather than a nuisance: the column name states the clock the file
+    is in. Fall back to the first column, since every export puts the
+    timestamp first.
+    """
+    for name in ("timestamp", "time", "date", "datetime", "Date", "Time"):
+        if name in fieldnames:
+            return name
+    for name in fieldnames:
+        low = name.lower()
+        if "/" in name or low in ("utc", "gmt") or "time" in low or "date" in low:
+            return name
+    return fieldnames[0]
+
+
+def _numeric(row: dict, *names: str) -> float:
+    for n in names:
+        if n in row and row[n] not in (None, ""):
+            return float(row[n])
+    raise KeyError(f"none of {names} present in {sorted(row)}")
+
+
 def load_csv(path: str) -> list[Bar]:
     bars: list[Bar] = []
     with open(path, newline="") as fh:
-        for row in csv.DictReader(fh):
-            raw = row.get("timestamp") or row.get("time") or row.get("date")
+        reader = csv.DictReader(fh)
+        key = _timestamp_key(list(reader.fieldnames or []))
+        for row in reader:
+            raw = row.get(key)
             ts = datetime.fromisoformat(raw.replace("Z", "+00:00"))
             if ts.tzinfo is None:
                 raise SystemExit(
@@ -75,9 +103,11 @@ def load_csv(path: str) -> list[Bar]:
                     "most testable part of this system and a guessed timezone would "
                     "silently invalidate all of them. Export with an offset or a Z."
                 )
-            bars.append(Bar(ts.astimezone(UTC), float(row["open"]), float(row["high"]),
-                            float(row["low"]), float(row["close"]),
-                            float(row.get("volume") or 0)))
+            bars.append(Bar(
+                ts.astimezone(UTC),
+                _numeric(row, "open", "Open"), _numeric(row, "high", "High"),
+                _numeric(row, "low", "Low"), _numeric(row, "close", "Close"),
+                float(row.get("volume") or row.get("Volume") or 0)))
     bars.sort(key=lambda b: b.ts)
     return bars
 

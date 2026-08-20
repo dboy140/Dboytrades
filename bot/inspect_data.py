@@ -32,16 +32,35 @@ def hourly_range_profile(bars: list[Bar]) -> dict[int, float]:
     return {h: statistics.mean(v) for h, v in sorted(buckets.items()) if v}
 
 
+MIN_HOURS_COVERED = 20      # a daily cycle needs most of a day represented
+MIN_SPAN_DAYS = 2           # and at least two of them, so one quiet day cannot skew it
+MIN_SPIKE_RATIO = 1.8       # below this there is no identifiable open
+
+
 def infer_ny_offset(bars: list[Bar], reference_ny_hour: int = 9) -> tuple[int, dict]:
     """Infer how many hours the file's clock leads New York.
 
-    Returns (offset_hours, diagnostics). An offset of 0 means the timestamps
-    really are New York time once converted; the check is done on the declared
-    UTC clock, so a correct UTC file gives the current UTC-to-NY difference.
+    Returns (offset_hours, diagnostics). The method depends on a visible daily
+    volatility cycle, so it REFUSES on data too short to contain one. Without
+    that guard a two-hour file reports a confident nine-hour shift, purely
+    because the loudest of its two hours is not the New York open -- which is
+    exactly the sort of wrong-but-plausible answer this tool exists to prevent.
     """
     profile = hourly_range_profile(bars)
     if not profile:
-        return 0, {"error": "no bars"}
+        return 0, {"error": "no bars", "confident": False}
+
+    span_days = (bars[-1].ts - bars[0].ts).total_seconds() / 86400
+    if len(profile) < MIN_HOURS_COVERED or span_days < MIN_SPAN_DAYS:
+        return 0, {
+            "confident": False,
+            "reason": (f"only {len(profile)} distinct hours across {span_days:.1f} days; "
+                       f"need {MIN_HOURS_COVERED} hours over {MIN_SPAN_DAYS}+ days to see "
+                       "a daily cycle"),
+            "hours_covered": len(profile),
+            "span_days": round(span_days, 2),
+        }
+
     peak_hour = max(profile, key=profile.get)
 
     # What hour does the file's clock show at the moment it is 09:30 in New York?
@@ -51,7 +70,19 @@ def infer_ny_offset(bars: list[Bar], reference_ny_hour: int = 9) -> tuple[int, d
     drift = (peak_hour - expected) % 24
     if drift > 12:
         drift -= 24
+
+    median = statistics.median(profile.values())
+    ratio = (profile[peak_hour] / median) if median else 0.0
+    if ratio < MIN_SPIKE_RATIO:
+        return 0, {
+            "confident": False,
+            "reason": (f"no clear volatility peak (ratio {ratio:.2f} < {MIN_SPIKE_RATIO}); "
+                       "cannot locate the New York open in this data"),
+            "spike_ratio": round(ratio, 2),
+        }
+
     return drift, {
+        "confident": True,
         "peak_hour_in_file_clock": peak_hour,
         "expected_hour_for_0930_ny": expected,
         "peak_avg_range": round(profile[peak_hour], 5),
@@ -148,13 +179,18 @@ def main(argv: list[str] | None = None) -> int:
 
     offset, diag = infer_ny_offset(bars)
     print(f"\n  TIMEZONE CHECK")
-    print(f"    volatility peaks at hour {diag.get('peak_hour_in_file_clock')} "
-          f"(file clock); expected {diag.get('expected_hour_for_0930_ny')} "
-          f"if the timestamps are correct")
-    print(f"    spike ratio vs median hour: {diag.get('spike_ratio')}")
-    if offset == 0:
-        print("    OK  timestamps look correctly stamped")
+    if not diag.get("confident"):
+        print(f"    INCONCLUSIVE  {diag.get('reason', diag.get('error'))}")
+        print("    No claim made about the timezone. Re-run on a longer file.")
+        offset = 0
     else:
+        print(f"    volatility peaks at hour {diag.get('peak_hour_in_file_clock')} "
+              f"(file clock); expected {diag.get('expected_hour_for_0930_ny')} "
+              f"if the timestamps are correct")
+        print(f"    spike ratio vs median hour: {diag.get('spike_ratio')}")
+    if diag.get("confident") and offset == 0:
+        print("    OK  timestamps look correctly stamped")
+    elif diag.get("confident"):
         print(f"    WARNING  data appears shifted by {offset:+d} hours.")
         print(f"    MT4/MT5 exports are in broker server time (often UTC+2/+3),")
         print(f"    not UTC. If so, every session window is wrong by that much")
