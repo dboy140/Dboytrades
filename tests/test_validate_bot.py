@@ -184,3 +184,77 @@ class TestVerdictLanguage:
     def test_pooled_trades_are_every_fold_s_trades(self):
         rep = self._report(0.5, 40, folds=4)
         assert len(rep.oos_r_multiples) == rep.total_oos_trades
+
+
+class TestTheRandomWalkThatUsedToPass:
+    """A real measured noise result, kept as a fixture.
+
+    These 30 R-multiples are the actual out-of-sample trades from walk-forward
+    over a 150,000-bar random walk (seed 5) -- data with no edge in it at all.
+    They are here rather than regenerated because regenerating means running a
+    ten-minute walk-forward, and because a recorded observation is harder to
+    argue with than a synthetic one.
+
+    The old gate would have accepted this: 30 trades, positive expectancy. Note
+    also that all three folds were profitable, so the fold-agreement check would
+    NOT have caught it either. The confidence interval is the only guard that
+    does, which is why it is not optional.
+    """
+
+    # 14 wins around +1.63R, 16 losses at -1.0R. Positive on average, and
+    # entirely a product of chance.
+    MEASURED_NOISE_R = [
+    1.615, 1.6316, 1.6316, -1.0, -1.0, -1.0, -1.0, 1.0321, 1.6316, -1.0,
+    -1.0, 1.6316, 1.1197, 1.606, -1.0, 1.6316, -1.0, 1.6316, -1.0, -1.0,
+    -1.0, -1.0, 1.6316, -1.0, 1.6316, 1.6316, -1.0, 1.6316, 1.6316, -1.0
+    ]
+
+    def _report(self):
+        from bot.validate import Fold, WalkForwardReport
+        import statistics
+        rs = self.MEASURED_NOISE_R
+        rep = WalkForwardReport()
+        # Split as walk-forward did: three folds, all of them profitable.
+        for i, chunk in enumerate((rs[:10], rs[10:20], rs[20:])):
+            rep.folds.append(Fold(i, "a", "b", "c", "d", {}, 1.0,
+                                  round(statistics.mean(chunk), 4),
+                                  len(chunk), chunk))
+        return rep
+
+    def test_the_average_really_is_positive(self):
+        """If this ever fails the fixture has drifted, not the validator."""
+        rep = self._report()
+        assert rep.total_oos_trades == 30
+        assert rep.combined_oos_expectancy > 0
+
+    def test_the_old_gate_would_have_accepted_it(self):
+        """Documents the hole rather than trusting memory of it."""
+        rep = self._report()
+        assert rep.total_oos_trades >= 20 and rep.combined_oos_expectancy > 0
+
+    def test_fold_agreement_would_not_have_caught_it(self):
+        rep = self._report()
+        assert rep.folds_positive == rep.folds_scored
+
+    def test_the_interval_catches_it(self):
+        rep = self._report()
+        ci = rep.oos_confidence
+        assert ci["ci95_low"] < 0 < ci["ci95_high"]
+        assert not ci["positive_with_95pct_confidence"]
+        assert "NOT DISTINGUISHABLE FROM LUCK" in rep.verdict
+
+    def test_the_live_gate_stays_shut(self, tmp_path):
+        import json
+        from bot.live import validation_allows_live
+        rep = self._report()
+        p = tmp_path / "v.json"
+        p.write_text(json.dumps({
+            "total_oos_trades": rep.total_oos_trades,
+            "combined_oos_expectancy": rep.combined_oos_expectancy,
+            "oos_confidence": rep.oos_confidence,
+            "folds_positive": rep.folds_positive,
+            "folds_scored": rep.folds_scored,
+        }))
+        ok, why = validation_allows_live(p)
+        assert not ok
+        assert "not distinguishable from luck" in why

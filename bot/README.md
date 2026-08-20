@@ -86,6 +86,31 @@ The trade floor also moved from 20 to 30, but that is the least important
 change — the interval does the real work. A positive average over a small
 sample is precisely what no edge looks like, some of the time.
 
+### Measured: twelve independent random walks
+
+The bug was found on one random walk, which proves nothing on its own. Twelve
+more were generated with different seeds, 150,000 bars each, and run through
+walk-forward:
+
+| | |
+| --- | --- |
+| Random walks tested | 12 |
+| **Positive out-of-sample expectancy on noise** | **9 of 12** |
+| Old gate would have opened | 2 of 12 |
+| New gate opened | **0 of 12** |
+
+Nine of twelve showed a *positive* out-of-sample average on data with no edge in
+it whatsoever. That is the entire argument for not trusting an expectancy figure
+on its own.
+
+Read the 0 of 12 carefully, though. Only one walk (seed 5) accumulated enough
+trades to reach the confidence check at all, and it was correctly refused —
+30 trades, +0.2776R, interval straddling zero, `NOT DISTINGUISHABLE FROM LUCK`.
+The other eleven were stopped earlier by the trade-count floor. So this is one
+direct observation of the interval doing its job and eleven of the floor doing
+its job, not twelve of either. Both guards are load-bearing, which is why the
+gate requires all of them rather than any one.
+
 A report written before this check has no interval in it, and a missing field
 is treated as a refusal rather than a pass. Old reports must be regenerated.
 
