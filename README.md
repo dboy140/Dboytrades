@@ -41,11 +41,12 @@ The build environment cannot reach YouTube (`403` to `CONNECT` — an egress
 policy denial, reported rather than routed around), so each phase ships as a
 Colab notebook that runs on Google's machines instead:
 
-| Notebook | Does |
-| --- | --- |
-| `notebooks/gate1_colab.ipynb` | Discovery — which videos exist, filtered to the eight ICT topics |
-| `notebooks/backtest_colab.ipynb` | Backtest one setup on your CSV |
-| `notebooks/validate_colab.ipynb` | **Walk-forward validation — the one that can say no** |
+| Notebook | Does | Needs |
+| --- | --- | --- |
+| `notebooks/see_for_yourself.ipynb` | **Start here.** Proves the machinery is honest — finds no edge in random data, refuses a lucky result, accepts a real one | nothing |
+| `notebooks/gate1_colab.ipynb` | Discovery — which videos exist, filtered to the eight ICT topics | nothing |
+| `notebooks/backtest_colab.ipynb` | Backtest one setup | your CSV |
+| `notebooks/validate_colab.ipynb` | Walk-forward validation — the one that can say no | your CSV |
 
 `notebooks/gate1_standalone.py` and `gate2_standalone.py` are generated from
 `scripts/`, and `tests/test_standalone.py` regenerates them and fails if they
