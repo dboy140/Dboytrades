@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 from .backtest import run
 from .bars import NY, UTC, Bar
 from .bias import daily_bias
+from . import journal
 from .signals import ote, silver_bullet
 
 
@@ -94,9 +95,13 @@ def main(argv: list[str] | None = None) -> int:
                          "module docstring before trusting it (GAPS G-07)")
     ap.add_argument("--displacement-multiple", type=float, default=1.5)
     ap.add_argument("--min-rr", type=float, default=1.0)
+    ap.add_argument("--journal", help="write trades to this CSV (journal format)")
+    ap.add_argument("--account", type=float, help="account size, to size positions")
+    ap.add_argument("--value-per-point", type=float, default=1.0)
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
 
+    rejections: list[str] = []
     bars = load_csv(args.csv)
     if len(bars) < 50:
         raise SystemExit(f"only {len(bars)} bars; need a meaningful sample")
@@ -122,15 +127,16 @@ def main(argv: list[str] | None = None) -> int:
                     return None      # HTF-003: no bias is a valid outcome
                 return silver_bullet(bs, i, args.instrument, res.direction,
                                      displacement_multiple=args.displacement_multiple,
-                                     min_rr=args.min_rr)
+                                     min_rr=args.min_rr, rejections=rejections)
         else:
             def strategy(bs, i):
                 return silver_bullet(bs, i, args.instrument, args.bias,
                                      displacement_multiple=args.displacement_multiple,
-                                     min_rr=args.min_rr)
+                                     min_rr=args.min_rr, rejections=rejections)
     else:
         def strategy(bs, i):
-            return ote(bs, i, args.instrument, min_rr=args.min_rr)
+            return ote(bs, i, args.instrument, min_rr=args.min_rr,
+                       rejections=rejections)
 
     res = run(bars, strategy)
     stats, by_rule = res.stats(), res.by_rule()
@@ -149,6 +155,20 @@ def main(argv: list[str] | None = None) -> int:
             flag = "" if s["enough_data"] else "   (under 20 trades - not conclusive)"
             print(f"    {rid:<10} {s['trades']:>4} trades  avg {s['avg_r']:+.2f}R  "
                   f"win {s['win_rate']:.0%}{flag}")
+    # The backtest plan is explicit: a filter that never fires is not a filter.
+    print(f"\n  MM-006 rejections (high resistance): {len(rejections)}")
+    for r in rejections[:3]:
+        print(f"    {r}")
+    if not rejections:
+        print("    none fired - either every setup was clean, or the filter is "
+              "not reaching the cases it should")
+
+    if args.journal:
+        n = journal.write(args.journal, res.trades, args.instrument,
+                          account=args.account,
+                          value_per_point=args.value_per_point)
+        print(f"\n  wrote {n} trades to {args.journal}")
+
     if stats.get("trades", 0) < 20:
         print("\n  NOTE: fewer than 20 closed trades. Per GAPS.md and the review loop, "
               "no rule should be judged on this.")

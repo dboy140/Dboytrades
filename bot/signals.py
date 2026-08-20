@@ -11,7 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .bars import Bar, confirmed_swings
+from .bars import Bar, confirmed_swings, resample
+from .filters import low_resistance
 from .patterns import MSS, FVG, detect_mss, find_fvgs, is_displacement, ote_levels
 from .sessions import active_windows
 
@@ -58,11 +59,21 @@ def _is_coherent(sig: Signal, min_rr: float) -> bool:
 
 
 def _nearest_target(mss: MSS | None, bars: list[Bar], upto: int,
-                    direction: str) -> float | None:
-    """Nearest opposing liquidity. SB-004: take the nearest pool, not extension."""
+                    direction: str, htf_minutes: int = 15) -> float | None:
+    """Nearest opposing liquidity. SB-004: take the nearest pool, not extension.
+
+    Uses the same timeframe as the MM-006 resistance check. If the target were
+    drawn from 1m wiggles while resistance was judged on 15m structure, the two
+    would be answering different questions and the filter would look stricter
+    than it is.
+    """
     if mss and mss.targets:
         return mss.targets[0]
-    swings = confirmed_swings(bars, upto)
+    if htf_minutes and htf_minutes > 1:
+        htf = resample(bars[:upto + 1], htf_minutes)
+        swings = confirmed_swings(htf, len(htf) - 1)
+    else:
+        swings = confirmed_swings(bars, upto)
     close = bars[upto].close
     if direction == "long":
         highs = sorted(s.price for s in swings if s.kind == "high" and s.price > close)
@@ -74,7 +85,8 @@ def _nearest_target(mss: MSS | None, bars: list[Bar], upto: int,
 
 def silver_bullet(bars: list[Bar], upto: int, instrument: str, bias: str,
                   *, displacement_multiple: float = 1.5,
-                  news_day: bool = False, min_rr: float = 1.0) -> Signal | None:
+                  news_day: bool = False, min_rr: float = 1.0,
+                  rejections: list[str] | None = None) -> Signal | None:
     """SB-001/002 window, SB-003 entry and stop, SB-004 target.
 
     `bias` must be supplied by the caller: HTF bias is not automatable
@@ -112,11 +124,23 @@ def silver_bullet(bars: list[Bar], upto: int, instrument: str, bias: str,
     sig = Signal(upto, "Silver Bullet", bias, entry, stop, target,
                  ["SB-001" if "am" in windows[0].key else "SB-002", "SB-003", "SB-004"],
                  window=windows[0].key)
-    return sig if _is_coherent(sig, min_rr) else None
+    if not _is_coherent(sig, min_rr):
+        return None
+
+    # MM-006 is the system's strongest claim; enforcing it here means the
+    # backtest tests the system the corpus describes rather than a looser one.
+    lr = low_resistance(sig.entry, sig.target, sig.direction, bars, upto)
+    if not lr.passed:
+        if rejections is not None:
+            rejections.append(f"{lr.rule_id}: {lr.reason}")
+        return None
+    sig.rule_ids.append("MM-006")
+    return sig
 
 
 def ote(bars: list[Bar], upto: int, instrument: str,
-        *, stop_buffer: float = 0.0, min_rr: float = 1.0) -> Signal | None:
+        *, stop_buffer: float = 0.0, min_rr: float = 1.0,
+        rejections: list[str] | None = None) -> Signal | None:
     """OTE-003 sequence, OTE-002 entry at 62% and stop beyond the fib origin.
 
     Unlike Silver Bullet this does not need an external bias: OTE-003 derives
@@ -154,4 +178,12 @@ def ote(bars: list[Bar], upto: int, instrument: str,
                  mss.targets[0], ["OTE-001", "OTE-002", "OTE-003"],
                  window=windows[0].key,
                  notes="entry at 62% per OTE-002; 70.5/79 deliberately not used")
-    return sig if _is_coherent(sig, min_rr) else None
+    if not _is_coherent(sig, min_rr):
+        return None
+    lr = low_resistance(sig.entry, sig.target, sig.direction, bars, upto)
+    if not lr.passed:
+        if rejections is not None:
+            rejections.append(f"{lr.rule_id}: {lr.reason}")
+        return None
+    sig.rule_ids.append("MM-006")
+    return sig

@@ -98,3 +98,33 @@ def confirmed_swings(bars: list[Bar], upto: int, lookback: int = 2) -> list[Swin
     the single most common way a discretionary backtest flatters itself.
     """
     return [s for s in swing_points(bars[:upto + 1], lookback) if s.index + lookback <= upto]
+
+
+def resample(bars: list[Bar], minutes: int) -> list[Bar]:
+    """Aggregate to a higher timeframe, bucketing on New York wall-clock time.
+
+    Needed because structure has to be judged on a timeframe where a swing
+    means something. On 1m bars every three-bar wiggle is a fractal swing, and
+    treating those as liquidity pools makes every path look obstructed.
+    """
+    if minutes <= 0:
+        raise ValueError("minutes must be positive")
+    out: list[Bar] = []
+    bucket: list[Bar] = []
+    key = None
+    for bar in bars:
+        ny = bar.ny
+        k = (ny.date(), ny.hour, ny.minute // minutes)
+        if key is None:
+            key = k
+        if k != key:
+            out.append(Bar(bucket[0].ts, bucket[0].open,
+                           max(x.high for x in bucket), min(x.low for x in bucket),
+                           bucket[-1].close, sum(x.volume for x in bucket)))
+            bucket, key = [], k
+        bucket.append(bar)
+    if bucket:
+        out.append(Bar(bucket[0].ts, bucket[0].open,
+                       max(x.high for x in bucket), min(x.low for x in bucket),
+                       bucket[-1].close, sum(x.volume for x in bucket)))
+    return out
