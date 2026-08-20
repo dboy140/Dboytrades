@@ -9,38 +9,59 @@ enforced by the type system and the verification pass, not by discipline.
 
 ---
 
-## Status: pipeline complete, Gate 1 blocked in the build environment
+## Status
 
-**Discovery has never run. `data/manifest.json` does not exist. Zero videos
-found, zero transcripts fetched.**
+All seven phases have run. The corpus was built, the rules were extracted and
+verified against it, and the system was turned into an execution engine.
 
-The environment this was built in cannot reach YouTube:
-
-| Host | Result |
+| | |
 | --- | --- |
-| `www.youtube.com:443` | `403` to `CONNECT` — egress policy denial |
+| Transcripts | 145 pulled, 139 kept (5 quarantined as a different show, 1 empty) |
+| Words | 775,614 |
+| Rules | 63, every one carrying a source |
+| Citations | **102/102 verified** — video in corpus, timestamp inside the real runtime, transcript cue within 90s, deep link matching |
+| Deliverables | `strategy/` — system, sources, conflicts, gaps, verification |
+| Engine | `bot/` — signals, filters, backtest, walk-forward validation, live rails |
 
-yt-dlp confirms it directly: `Tunnel connection failed: 403 Forbidden`.
+The verifier is negative-tested: moving a timestamp past the end of a video,
+swapping the video id, desyncing a deep link and stripping sources are all
+caught.
 
-Gate 1 asks for video counts per bucket, NBB totals, runtime hours and cost.
-All four require enumeration to have happened, so presenting any number for
-them would mean inventing it. Nothing was invented — see
-[docs/BLOCKED.md](docs/BLOCKED.md).
+**What has not happened: the system has never been validated on real price
+data.** The engine runs, the machinery is tested, and on a random walk it
+correctly reports no edge (expectancy −0.0R, profit factor 1.0). But no
+conclusion about whether these rules make money is available yet, because that
+needs a couple of years of 1-minute bars that this build environment cannot
+reach and that nobody has supplied. Any win rate quoted before that would be
+invented.
 
-**This is an environment limitation, not a code one.** The pipeline runs
-anywhere YouTube is reachable, and needs no API key or paid account:
+### Running it without a dev machine
+
+The build environment cannot reach YouTube (`403` to `CONNECT` — an egress
+policy denial, reported rather than routed around), so each phase ships as a
+Colab notebook that runs on Google's machines instead:
+
+| Notebook | Does |
+| --- | --- |
+| `notebooks/gate1_colab.ipynb` | Discovery — which videos exist, filtered to the eight ICT topics |
+| `notebooks/backtest_colab.ipynb` | Backtest one setup on your CSV |
+| `notebooks/validate_colab.ipynb` | **Walk-forward validation — the one that can say no** |
+
+`notebooks/gate1_standalone.py` and `gate2_standalone.py` are generated from
+`scripts/`, and `tests/test_standalone.py` regenerates them and fails if they
+have drifted, so the Colab copy cannot silently diverge from the real pipeline.
+
+### Or locally
 
 ```bash
 git clone https://github.com/dboy140/Dboytrades.git && cd Dboytrades
 git checkout claude/ict-nbbtrader-trading-system-43hipg
 pip install -r requirements.txt
 
-python -m scripts.discover      # Phase 1 -> Gate 1
+python -m scripts.discover                      # Phase 1 -> Gate 1
+python -m bot.inspect_data your_data.csv        # check the timestamps first
+python -m bot.run_validate your_data.csv --instrument EURUSD
 ```
-
-Reproduce the block: `python -m scripts.verify_env` (exit 2 while blocked).
-
----
 
 ## Scope
 

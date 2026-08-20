@@ -46,6 +46,49 @@ backtest flatters itself.
 **FVGs are indexed by their third bar**, the first moment the gap exists.
 Indexing by the first bar would let a backtest act two bars early.
 
+## The validator was wrong, and it was wrong in the dangerous direction
+
+Worth reading before trusting any number this produces.
+
+The walk-forward verdict originally asked for two things: at least 20 pooled
+out-of-sample trades, and a positive mean expectancy across folds. A **pure
+random walk** — synthetic data with no edge in it at all — cleared both:
+
+```
+fold  test period                  IS exp   OOS exp  trades    kept
+0     2024-03-10 to 2024-04-01   -0.123     0.053       5       -
+1     2024-04-02 to 2024-04-24   -0.211     0.284       2       -
+2     2024-04-25 to 2024-05-17    0.394     0.772      11    196%
+3     2024-05-19 to 2024-06-10    0.798    -0.064       9     -8%
+
+Combined out-of-sample expectancy: +0.2612R
+VERDICT: SURVIVED out of sample. Necessary, not sufficient.
+```
+
+`live.py` gates real orders on that file, so noise was enough to authorise live
+trading. A validator that errs towards "go ahead" is worse than no validator,
+because it launders a guess into evidence.
+
+Three defects, each independently sufficient:
+
+1. **The combined figure was a flat mean over folds.** A fold with 2 trades
+   counted as much as one with 11. It is now weighted by trades.
+2. **The confidence interval was computed on the wrong sample and then
+   ignored.** It ran on a whole-sample backtest at `grid[len(grid)//2]` — an
+   arbitrary setting which in this run generated *zero* trades, so the single
+   most important check printed "too few trades" and the verdict sailed past
+   unchallenged. It now runs on the pooled out-of-sample trades, and the
+   verdict and the live gate both require it to exclude zero.
+3. **No fold had to agree with any other.** One good window out of four passed.
+   A majority must now be profitable.
+
+The trade floor also moved from 20 to 30, but that is the least important
+change — the interval does the real work. A positive average over a small
+sample is precisely what no edge looks like, some of the time.
+
+A report written before this check has no interval in it, and a missing field
+is treated as a refusal rather than a pass. Old reports must be regenerated.
+
 ## Why there is a structure index
 
 A backtest that cannot be run is worth nothing, and this one could not be run.

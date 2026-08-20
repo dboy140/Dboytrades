@@ -136,11 +136,25 @@ class TestEndToEnd:
 
     def test_live_mode_opens_only_with_a_passing_report(self, tmp_path):
         report = tmp_path / "v.json"
-        report.write_text(json.dumps({"total_oos_trades": 45,
-                                      "combined_oos_expectancy": 0.4}))
+        report.write_text(json.dumps({
+            "total_oos_trades": 45, "combined_oos_expectancy": 0.4,
+            "oos_confidence": {"positive_with_95pct_confidence": True,
+                               "ci95_low": 0.11, "ci95_high": 0.68},
+            "folds_positive": 4, "folds_scored": 5,
+        }))
         ex = Executor(PaperBroker(25_000), value_per_point=VPP, mode="live",
                       validation_report=report)
         assert ex.mode == "live"
+
+    def test_live_mode_stays_shut_without_a_confidence_interval(self, tmp_path):
+        """A report from before the luck check has no interval in it, and a
+        missing field must not read as a pass."""
+        report = tmp_path / "v.json"
+        report.write_text(json.dumps({"total_oos_trades": 45,
+                                      "combined_oos_expectancy": 0.4}))
+        with pytest.raises(SafetyViolation):
+            Executor(PaperBroker(25_000), value_per_point=VPP, mode="live",
+                     validation_report=report)
 
     def test_summary_reports_block_reasons(self, tmp_path):
         r, ex = make_runner(warmup_bars=1, journal_path=str(tmp_path / "j.jsonl"))

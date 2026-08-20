@@ -13,8 +13,8 @@ from pathlib import Path
 from .run_backtest import load_csv
 from .signals import ote, silver_bullet
 from .validate import (
-    bootstrap_expectancy, monte_carlo_drawdown, parameter_surface,
-    surface_is_a_spike, walk_forward,
+    MIN_OOS_TRADES, bootstrap_expectancy, monte_carlo_drawdown,
+    parameter_surface, surface_is_a_spike, walk_forward,
 )
 from .backtest import run
 from .bars import SwingIndexCache
@@ -86,13 +86,26 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Out-of-sample trades:              {report.total_oos_trades}")
     print(f"\nVERDICT: {report.verdict}")
 
-    # Whole-sample diagnostics on the mid-grid setting.
-    mid = grid[len(grid) // 2]
-    res = run(bars, factory(**mid))
+    # The confidence interval belongs on the pooled OUT-OF-SAMPLE trades --
+    # the sample the verdict is about. An earlier version ran it on a
+    # whole-sample backtest at grid[len(grid)//2], an arbitrary setting which
+    # on one run generated zero trades, so the single most important check
+    # printed "too few trades" and the verdict sailed past unchallenged.
+    ci = report.oos_confidence
+
+    print(f"\n{line}\nIS THE OUT-OF-SAMPLE RESULT DISTINGUISHABLE FROM LUCK?\n{line}")
+    for k, v in ci.items():
+        print(f"  {k:<32} {v}")
+    print(f"  {'profitable windows':<32} "
+          f"{report.folds_positive}/{report.folds_scored}")
+
+    # Drawdown is a question about the trades you would have taken, so it is
+    # asked of the setting walk-forward actually chose most often.
+    chosen = _most_chosen(report) or grid[0]
+    res = run(bars, factory(**chosen))
     boot = bootstrap_expectancy(res.closed)
     mc = monte_carlo_drawdown(res.closed)
-
-    print(f"\n{line}\nIS THE RESULT DISTINGUISHABLE FROM LUCK?\n{line}")
+    print(f"\n  whole-sample check at the most-chosen setting {chosen}:")
     for k, v in boot.items():
         print(f"  {k:<32} {v}")
 
@@ -118,14 +131,33 @@ def main(argv: list[str] | None = None) -> int:
         "combined_oos_expectancy": report.combined_oos_expectancy,
         "total_oos_trades": report.total_oos_trades,
         "verdict": report.verdict,
+        # The live gate reads these three. Without them it cannot tell a real
+        # edge from a lucky sample, so an older report missing them is
+        # refused rather than waved through.
+        "oos_confidence": ci,
+        "folds_positive": report.folds_positive,
+        "folds_scored": report.folds_scored,
         "folds": [f.__dict__ for f in report.folds],
         "bootstrap": boot, "monte_carlo": mc,
         "parameter_surface": surface, "curve_fitting_suspected": spike,
     }, indent=2, default=str))
     print(f"\nwrote {out}")
-    print("Live mode reads this file and refuses unless OOS expectancy is")
-    print("positive over 20+ out-of-sample trades.")
+    print(f"Live mode reads this file. It refuses unless out-of-sample "
+          f"expectancy is positive over {MIN_OOS_TRADES}+ trades, the 95% "
+          "interval excludes zero, and most windows are profitable.")
     return 0
+
+
+def _most_chosen(report) -> dict | None:
+    """The parameter set walk-forward picked in the most folds."""
+    counts: dict[str, tuple[int, dict]] = {}
+    for f in report.folds:
+        k = json.dumps(f.best_params, sort_keys=True)
+        n, params = counts.get(k, (0, f.best_params))
+        counts[k] = (n + 1, params)
+    if not counts:
+        return None
+    return max(counts.values(), key=lambda t: t[0])[1]
 
 
 if __name__ == "__main__":

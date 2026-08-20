@@ -113,20 +113,74 @@ class TestWalkForward:
 
 
 class TestVerdictLanguage:
-    def _report(self, oos_expectancy, trades, in_sample=1.0):
-        from bot.validate import Fold, WalkForwardReport
+    def _fold(self, i, oos_expectancy, trades, in_sample=1.0, spread=0.05):
+        """One fold whose trades really do average `oos_expectancy`.
+
+        The R-multiples matter now: the verdict bootstraps them. `spread`
+        controls how tight the sample is, which is what decides whether the
+        confidence interval clears zero.
+        """
+        from bot.validate import Fold
+        rs = [oos_expectancy + (spread if k % 2 else -spread)
+              for k in range(trades)]
+        return Fold(i, "a", "b", "c", "d", {}, in_sample,
+                    oos_expectancy, trades, rs)
+
+    def _report(self, oos_expectancy, trades, in_sample=1.0, spread=0.05,
+                folds=1):
+        from bot.validate import WalkForwardReport
         rep = WalkForwardReport()
-        rep.folds.append(Fold(0, "a", "b", "c", "d", {}, in_sample,
-                              oos_expectancy, trades))
+        per = max(1, trades // folds)
+        for i in range(folds):
+            rep.folds.append(self._fold(i, oos_expectancy, per, in_sample,
+                                        spread))
         return rep
 
     def test_negative_out_of_sample_is_reported_as_failure(self):
-        assert "FAILED" in self._report(-0.4, 30).verdict
+        assert "FAILED" in self._report(-0.4, 40).verdict
+
+    def test_too_few_trades_is_a_shortage_not_a_failure(self):
+        v = self._report(0.9, 12).verdict
+        assert "INSUFFICIENT DATA" in v
+        assert "not a failure" in v
 
     def test_heavy_degradation_is_reported_as_weak(self):
-        assert "WEAK" in self._report(0.1, 30, in_sample=2.0).verdict
+        assert "WEAK" in self._report(0.1, 40, in_sample=2.0).verdict
 
     def test_survival_is_not_overclaimed(self):
-        v = self._report(0.9, 30, in_sample=1.0).verdict
+        v = self._report(0.9, 40, in_sample=1.0).verdict
         assert "SURVIVED" in v
         assert "not sufficient" in v
+
+    def test_a_positive_average_with_a_wide_spread_is_called_luck(self):
+        """The random-walk case.
+
+        Same trade count and a healthy positive average, but the trades are
+        scattered widely enough that the interval straddles zero. Before this
+        check, pure noise reached SURVIVED and opened the live gate.
+        """
+        v = self._report(0.26, 40, spread=3.0).verdict
+        assert "NOT DISTINGUISHABLE FROM LUCK" in v
+
+    def test_an_edge_in_a_minority_of_windows_is_called_inconsistent(self):
+        from bot.validate import WalkForwardReport
+        rep = WalkForwardReport()
+        rep.folds.append(self._fold(0, 2.0, 30))        # one big winner
+        rep.folds.append(self._fold(1, -0.2, 12))
+        rep.folds.append(self._fold(2, -0.15, 12))
+        assert "INCONSISTENT" in rep.verdict
+
+    def test_combined_expectancy_is_weighted_by_trades(self):
+        """A flat mean let a two-trade fold outvote an eleven-trade one, which
+        is how a random walk was scored at +0.26R."""
+        from bot.validate import WalkForwardReport
+        rep = WalkForwardReport()
+        rep.folds.append(self._fold(0, -0.1, 90))
+        rep.folds.append(self._fold(1, 3.0, 10))
+        flat = (-0.1 + 3.0) / 2
+        assert rep.combined_oos_expectancy < flat
+        assert rep.combined_oos_expectancy == round((-0.1 * 90 + 3.0 * 10) / 100, 4)
+
+    def test_pooled_trades_are_every_fold_s_trades(self):
+        rep = self._report(0.5, 40, folds=4)
+        assert len(rep.oos_r_multiples) == rep.total_oos_trades

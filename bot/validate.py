@@ -34,6 +34,12 @@ Strategy = Callable[[list[Bar], int], object]
 StrategyFactory = Callable[..., Strategy]
 
 
+# 20 was the old floor and it was too low: with four folds it means five
+# trades a window, which is noise. This is still a floor rather than a
+# sufficiency test -- the confidence interval does the real work.
+MIN_OOS_TRADES = 30
+
+
 @dataclass
 class Fold:
     index: int
@@ -45,6 +51,10 @@ class Fold:
     in_sample_expectancy: float
     out_of_sample_expectancy: float
     out_of_sample_trades: int
+    # The R-multiples themselves, not just their mean. Pooling these is what
+    # lets the verdict put a confidence interval on the out-of-sample result
+    # rather than trusting a single average.
+    out_of_sample_r: list[float] = field(default_factory=list)
 
     @property
     def degradation(self) -> float | None:
@@ -60,8 +70,43 @@ class WalkForwardReport:
 
     @property
     def combined_oos_expectancy(self) -> float:
-        vals = [f.out_of_sample_expectancy for f in self.folds if f.out_of_sample_trades]
-        return round(statistics.mean(vals), 4) if vals else 0.0
+        """Weighted by trades, not a flat mean over folds.
+
+        A flat mean lets a fold with two trades count as much as one with
+        eleven, and on a random walk that is enough to turn a losing system
+        into a passing one. Observed: four folds of 5/2/11/9 trades averaged
+        +0.26R unweighted on pure noise.
+        """
+        den = self.total_oos_trades
+        if not den:
+            return 0.0
+        num = sum(f.out_of_sample_expectancy * f.out_of_sample_trades
+                  for f in self.folds)
+        return round(num / den, 4)
+
+    @property
+    def oos_r_multiples(self) -> list[float]:
+        """Every out-of-sample trade from every fold, pooled."""
+        return [r for f in self.folds for r in f.out_of_sample_r]
+
+    @property
+    def folds_positive(self) -> int:
+        return sum(1 for f in self.folds
+                   if f.out_of_sample_trades and f.out_of_sample_expectancy > 0)
+
+    @property
+    def folds_scored(self) -> int:
+        return sum(1 for f in self.folds if f.out_of_sample_trades)
+
+    @property
+    def oos_confidence(self) -> dict:
+        """Bootstrap interval on the pooled out-of-sample trades.
+
+        This is the check that separates an edge from a lucky run, and it is
+        applied to the walk-forward result itself rather than to a whole-sample
+        backtest at some arbitrary parameter setting.
+        """
+        return bootstrap_r(self.oos_r_multiples)
 
     @property
     def total_oos_trades(self) -> int:
@@ -69,12 +114,49 @@ class WalkForwardReport:
 
     @property
     def verdict(self) -> str:
-        if self.total_oos_trades < 20:
-            return ("INSUFFICIENT DATA -- fewer than 20 out-of-sample trades. "
-                    "No conclusion is available.")
+        """Deliberately hard to pass.
+
+        An earlier version asked only for 20 pooled out-of-sample trades and a
+        positive flat mean across folds. A pure random walk cleared it: four
+        folds of 5/2/11/9 trades, +0.26R, "SURVIVED". Since `bot/live.py` gates
+        real orders on this, noise was enough to authorise live trading -- the
+        worst failure this file can have, because it fails towards risking
+        money rather than away from it.
+
+        Three things now have to hold at once, and each closes a different way
+        of passing by luck:
+
+        1. Enough out-of-sample trades to say anything at all.
+        2. A trade-weighted expectancy above zero, so a tiny fold cannot carry
+           the result.
+        3. A bootstrap interval on the pooled out-of-sample trades that
+           excludes zero, and agreement across the majority of folds.
+
+        (3) is the one that matters. A positive average over a small sample is
+        exactly what a system with no edge produces some of the time.
+        """
+        if self.total_oos_trades < MIN_OOS_TRADES:
+            return (f"INSUFFICIENT DATA -- {self.total_oos_trades} out-of-sample "
+                    f"trades, fewer than {MIN_OOS_TRADES}. No conclusion is "
+                    "available. This is not a failure, it is a shortage of data.")
         if self.combined_oos_expectancy <= 0:
             return ("FAILED -- the edge did not survive out of sample. This is "
                     "the expected result for a curve-fitted system.")
+
+        ci = self.oos_confidence
+        if not ci.get("positive_with_95pct_confidence"):
+            return ("NOT DISTINGUISHABLE FROM LUCK -- out-of-sample expectancy "
+                    f"is {self.combined_oos_expectancy:+.3f}R, but the 95% "
+                    f"interval is [{ci.get('ci95_low')}, {ci.get('ci95_high')}] "
+                    "and includes zero. A system with no edge produces results "
+                    "like this routinely.")
+
+        if self.folds_scored and self.folds_positive * 2 <= self.folds_scored:
+            return (f"INCONSISTENT -- profitable in only {self.folds_positive} of "
+                    f"{self.folds_scored} out-of-sample windows. An edge that "
+                    "appears in a minority of periods is more likely a property "
+                    "of those periods than of the rules.")
+
         degradations = [f.degradation for f in self.folds if f.degradation is not None]
         if degradations and statistics.mean(degradations) < 0.5:
             return ("WEAK -- positive out of sample, but most of the in-sample "
@@ -123,7 +205,8 @@ def walk_forward(bars: list[Bar], factory: StrategyFactory,
                 fold_i, str(train[0].ny.date()), str(train[-1].ny.date()),
                 str(test[0].ny.date()), str(test[-1].ny.date()),
                 best, round(best_e, 4),
-                round(s.get("expectancy_r", 0.0) or 0.0, 4), s.get("trades", 0)))
+                round(s.get("expectancy_r", 0.0) or 0.0, 4), s.get("trades", 0),
+                [t.r_multiple for t in oos.closed]))
         fold_i += 1
         start += test_days
 
@@ -164,12 +247,21 @@ def surface_is_a_spike(surface: list[dict], top_fraction: float = 0.25) -> bool:
 
 def bootstrap_expectancy(trades: Iterable[Trade], n: int = 5000,
                          seed: int = 7) -> dict:
-    """Confidence interval on expectancy by resampling the trades.
+    """Confidence interval on expectancy by resampling closed trades."""
+    return bootstrap_r([t.r_multiple for t in trades if not t.is_open], n, seed)
+
+
+def bootstrap_r(rs: list[float], n: int = 5000, seed: int = 7) -> dict:
+    """Confidence interval on expectancy by resampling R-multiples.
 
     Answers the question a single expectancy figure cannot: could this result
     have come from a system with no edge at all?
+
+    Takes raw R-multiples so it can be applied to the pooled out-of-sample
+    trades of a walk-forward run, which is the sample the verdict should
+    actually be judging.
     """
-    rs = [t.r_multiple for t in trades if not t.is_open]
+    rs = list(rs)
     if len(rs) < 5:
         return {"trades": len(rs), "note": "too few trades to bootstrap"}
     rng = random.Random(seed)

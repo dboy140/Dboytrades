@@ -54,7 +54,44 @@ class TestLiveGate:
         p = tmp_path / "v.json"
         p.write_text(json.dumps({"total_oos_trades": 8, "combined_oos_expectancy": 1.5}))
         ok, why = validation_allows_live(p)
-        assert not ok and "conclusive below 20" in why
+        assert not ok and "conclusive below 30" in why
+
+    def test_live_refused_when_the_interval_includes_zero(self, tmp_path):
+        """The check that a pure random walk defeated.
+
+        Noise cleared 'enough trades' and 'positive expectancy' and was
+        declared SURVIVED, which opened this gate. A positive average over a
+        modest sample is exactly what no edge looks like some of the time.
+        """
+        p = tmp_path / "v.json"
+        p.write_text(json.dumps({
+            "total_oos_trades": 45, "combined_oos_expectancy": 0.26,
+            "oos_confidence": {"positive_with_95pct_confidence": False,
+                               "ci95_low": -0.11, "ci95_high": 0.63},
+            "folds_positive": 3, "folds_scored": 4,
+        }))
+        ok, why = validation_allows_live(p)
+        assert not ok and "not distinguishable from luck" in why
+
+    def test_live_refused_when_only_a_minority_of_windows_worked(self, tmp_path):
+        p = tmp_path / "v.json"
+        p.write_text(json.dumps({
+            "total_oos_trades": 60, "combined_oos_expectancy": 0.4,
+            "oos_confidence": {"positive_with_95pct_confidence": True,
+                               "ci95_low": 0.08, "ci95_high": 0.71},
+            "folds_positive": 2, "folds_scored": 5,
+        }))
+        ok, why = validation_allows_live(p)
+        assert not ok and "2 of 5" in why
+
+    def test_a_report_predating_the_confidence_check_is_refused(self, tmp_path):
+        """Silence is not evidence. An older report simply has no interval in
+        it, and treating a missing field as a pass would reopen the hole."""
+        p = tmp_path / "v.json"
+        p.write_text(json.dumps({"total_oos_trades": 60,
+                                 "combined_oos_expectancy": 0.35}))
+        ok, why = validation_allows_live(p)
+        assert not ok and "re-run validation" in why
 
     def test_live_refused_when_edge_died_out_of_sample(self, tmp_path):
         p = tmp_path / "v.json"
@@ -64,7 +101,12 @@ class TestLiveGate:
 
     def test_live_allowed_only_with_real_evidence(self, tmp_path):
         p = tmp_path / "v.json"
-        p.write_text(json.dumps({"total_oos_trades": 60, "combined_oos_expectancy": 0.35}))
+        p.write_text(json.dumps({
+            "total_oos_trades": 60, "combined_oos_expectancy": 0.35,
+            "oos_confidence": {"positive_with_95pct_confidence": True,
+                               "ci95_low": 0.09, "ci95_high": 0.62},
+            "folds_positive": 4, "folds_scored": 5,
+        }))
         ok, why = validation_allows_live(p)
         assert ok and "validated" in why
 

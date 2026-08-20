@@ -26,6 +26,7 @@ from typing import Protocol
 
 from .bars import Bar
 from .signals import Signal
+from .validate import MIN_OOS_TRADES
 
 log = logging.getLogger(__name__)
 
@@ -125,13 +126,34 @@ def validation_allows_live(report_path: str | Path) -> tuple[bool, str]:
 
     trades = data.get("total_oos_trades", 0)
     expectancy = data.get("combined_oos_expectancy", 0)
-    if trades < 20:
+    if trades < MIN_OOS_TRADES:
         return False, (f"only {trades} out-of-sample trades. Nothing is "
-                       "conclusive below 20.")
+                       f"conclusive below {MIN_OOS_TRADES}.")
     if expectancy <= 0:
         return False, (f"out-of-sample expectancy is {expectancy}. The edge did "
                        "not survive validation.")
-    return True, f"validated: {expectancy:+.3f}R over {trades} out-of-sample trades"
+
+    # A positive average over a small sample is what a system with NO edge
+    # produces a good fraction of the time. Requiring the interval to exclude
+    # zero is what stopped a pure random walk from opening this gate.
+    ci = data.get("oos_confidence") or {}
+    if not ci.get("positive_with_95pct_confidence"):
+        return False, (
+            f"out-of-sample expectancy is {expectancy:+.3f}R but the 95% "
+            f"interval [{ci.get('ci95_low')}, {ci.get('ci95_high')}] includes "
+            "zero, so the result is not distinguishable from luck. If this "
+            "report predates the confidence check, re-run validation.")
+
+    scored = data.get("folds_scored") or 0
+    positive = data.get("folds_positive") or 0
+    if scored and positive * 2 <= scored:
+        return False, (f"profitable in only {positive} of {scored} out-of-sample "
+                       "windows. That is a property of those periods, not of "
+                       "the rules.")
+
+    return True, (f"validated: {expectancy:+.3f}R over {trades} out-of-sample "
+                  f"trades, 95% interval excludes zero, positive in "
+                  f"{positive}/{scored} windows")
 
 
 class Executor:
