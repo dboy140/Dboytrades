@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .bars import Bar, confirmed_swings, resample
+from .bars import Bar, SwingIndex, confirmed_swings, resample_tail
 from .filters import low_resistance
 from .patterns import MSS, FVG, detect_mss, find_fvgs, is_displacement, ote_levels
 from .sessions import active_windows
@@ -59,7 +59,8 @@ def _is_coherent(sig: Signal, min_rr: float) -> bool:
 
 
 def _nearest_target(mss: MSS | None, bars: list[Bar], upto: int,
-                    direction: str, htf_minutes: int = 15) -> float | None:
+                    direction: str, htf_minutes: int = 15,
+                    index: SwingIndex | None = None) -> float | None:
     """Nearest opposing liquidity. SB-004: take the nearest pool, not extension.
 
     Uses the same timeframe as the MM-006 resistance check. If the target were
@@ -70,10 +71,11 @@ def _nearest_target(mss: MSS | None, bars: list[Bar], upto: int,
     if mss and mss.targets:
         return mss.targets[0]
     if htf_minutes and htf_minutes > 1:
-        htf = resample(bars[:upto + 1], htf_minutes)
+        htf = (index.htf(htf_minutes, upto) if index is not None
+               else resample_tail(bars, htf_minutes, upto))
         swings = confirmed_swings(htf, len(htf) - 1)
     else:
-        swings = confirmed_swings(bars, upto)
+        swings = confirmed_swings(bars, upto, index=index)
     close = bars[upto].close
     if direction == "long":
         highs = sorted(s.price for s in swings if s.kind == "high" and s.price > close)
@@ -86,7 +88,8 @@ def _nearest_target(mss: MSS | None, bars: list[Bar], upto: int,
 def silver_bullet(bars: list[Bar], upto: int, instrument: str, bias: str,
                   *, displacement_multiple: float = 1.5,
                   news_day: bool = False, min_rr: float = 1.0,
-                  rejections: list[str] | None = None) -> Signal | None:
+                  rejections: list[str] | None = None,
+                  index: SwingIndex | None = None) -> Signal | None:
     """SB-001/002 window, SB-003 entry and stop, SB-004 target.
 
     `bias` must be supplied by the caller: HTF bias is not automatable
@@ -108,8 +111,8 @@ def silver_bullet(bars: list[Bar], upto: int, instrument: str, bias: str,
     if gap is None:
         return None
 
-    mss = detect_mss(bars, upto)
-    target = _nearest_target(mss, bars, upto, bias)
+    mss = detect_mss(bars, upto, index=index)
+    target = _nearest_target(mss, bars, upto, bias, index=index)
     if target is None:
         return None  # MM-006: no defined objective, no trade
 
@@ -129,7 +132,8 @@ def silver_bullet(bars: list[Bar], upto: int, instrument: str, bias: str,
 
     # MM-006 is the system's strongest claim; enforcing it here means the
     # backtest tests the system the corpus describes rather than a looser one.
-    lr = low_resistance(sig.entry, sig.target, sig.direction, bars, upto)
+    lr = low_resistance(sig.entry, sig.target, sig.direction, bars, upto,
+                        index=index)
     if not lr.passed:
         if rejections is not None:
             rejections.append(f"{lr.rule_id}: {lr.reason}")
@@ -140,7 +144,8 @@ def silver_bullet(bars: list[Bar], upto: int, instrument: str, bias: str,
 
 def ote(bars: list[Bar], upto: int, instrument: str,
         *, stop_buffer: float = 0.0, min_rr: float = 1.0,
-        rejections: list[str] | None = None) -> Signal | None:
+        rejections: list[str] | None = None,
+        index: SwingIndex | None = None) -> Signal | None:
     """OTE-003 sequence, OTE-002 entry at 62% and stop beyond the fib origin.
 
     Unlike Silver Bullet this does not need an external bias: OTE-003 derives
@@ -152,11 +157,11 @@ def ote(bars: list[Bar], upto: int, instrument: str,
     if not windows:
         return None
 
-    mss = detect_mss(bars, upto)
+    mss = detect_mss(bars, upto, index=index)
     if mss is None or not mss.tradeable:
         return None
 
-    swings = confirmed_swings(bars, upto)
+    swings = confirmed_swings(bars, upto, index=index)
     if mss.direction == "bullish":
         low = mss.swept_price
         highs = [s.price for s in swings if s.kind == "high" and s.price > low]
@@ -180,7 +185,8 @@ def ote(bars: list[Bar], upto: int, instrument: str,
                  notes="entry at 62% per OTE-002; 70.5/79 deliberately not used")
     if not _is_coherent(sig, min_rr):
         return None
-    lr = low_resistance(sig.entry, sig.target, sig.direction, bars, upto)
+    lr = low_resistance(sig.entry, sig.target, sig.direction, bars, upto,
+                        index=index)
     if not lr.passed:
         if rejections is not None:
             rejections.append(f"{lr.rule_id}: {lr.reason}")

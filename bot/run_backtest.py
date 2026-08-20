@@ -17,7 +17,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from .backtest import run
-from .bars import NY, UTC, Bar
+from .bars import NY, UTC, Bar, SwingIndexCache
 from .bias import daily_bias
 from . import journal
 from .signals import ote, silver_bullet
@@ -136,6 +136,10 @@ def main(argv: list[str] | None = None) -> int:
     if len(bars) < 50:
         raise SystemExit(f"only {len(bars)} bars; need a meaningful sample")
 
+    # Structure is indexed once per series instead of rescanned per bar; the
+    # rescan was 9.9 of 12.1 seconds in the signal path.
+    swings = SwingIndexCache()
+
     if args.setup == "silver_bullet":
         if not args.bias:
             raise SystemExit(
@@ -157,16 +161,18 @@ def main(argv: list[str] | None = None) -> int:
                     return None      # HTF-003: no bias is a valid outcome
                 return silver_bullet(bs, i, args.instrument, res.direction,
                                      displacement_multiple=args.displacement_multiple,
-                                     min_rr=args.min_rr, rejections=rejections)
+                                     min_rr=args.min_rr, rejections=rejections,
+                                     index=swings.get(bs))
         else:
             def strategy(bs, i):
                 return silver_bullet(bs, i, args.instrument, args.bias,
                                      displacement_multiple=args.displacement_multiple,
-                                     min_rr=args.min_rr, rejections=rejections)
+                                     min_rr=args.min_rr, rejections=rejections,
+                                     index=swings.get(bs))
     else:
         def strategy(bs, i):
             return ote(bs, i, args.instrument, min_rr=args.min_rr,
-                       rejections=rejections)
+                       rejections=rejections, index=swings.get(bs))
 
     res = run(bars, strategy)
     stats, by_rule = res.stats(), res.by_rule()

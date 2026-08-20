@@ -17,6 +17,7 @@ from .validate import (
     surface_is_a_spike, walk_forward,
 )
 from .backtest import run
+from .bars import SwingIndexCache
 
 
 def build_grid(setup: str) -> list[dict]:
@@ -42,14 +43,21 @@ def main(argv: list[str] | None = None) -> int:
     bars = load_csv(args.csv)
     inst, setup = args.instrument, args.setup
 
+    # Shared across the whole grid on purpose. walk_forward iterates folds
+    # outermost, so each fold's series is indexed once and then reused by every
+    # parameter combination tried on it.
+    swings = SwingIndexCache()
+
     if setup == "silver_bullet":
         def factory(displacement_multiple=1.5, min_rr=1.0):
             return lambda bs, i: silver_bullet(
                 bs, i, inst, args.bias,
-                displacement_multiple=displacement_multiple, min_rr=min_rr)
+                displacement_multiple=displacement_multiple, min_rr=min_rr,
+                index=swings.get(bs))
     else:
         def factory(min_rr=1.0):
-            return lambda bs, i: ote(bs, i, inst, min_rr=min_rr)
+            return lambda bs, i: ote(bs, i, inst, min_rr=min_rr,
+                                     index=swings.get(bs))
 
     grid = build_grid(setup)
     line = "=" * 70

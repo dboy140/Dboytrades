@@ -31,7 +31,7 @@ point they become your parameters, honestly labelled as such.
 
 | Module | Implements |
 | --- | --- |
-| `bars.py` | `Bar`, fractal swings, `confirmed_swings` (no-lookahead) |
+| `bars.py` | `Bar`, fractal swings, `confirmed_swings` (no-lookahead), `SwingIndex` |
 | `patterns.py` | FVG, inversion, displacement, MSS, OTE levels, premium/discount |
 | `sessions.py` | All session windows, DST-aware via IANA |
 
@@ -45,6 +45,55 @@ backtest flatters itself.
 
 **FVGs are indexed by their third bar**, the first moment the gap exists.
 Indexing by the first bar would let a backtest act two bars early.
+
+## Why there is a structure index
+
+A backtest that cannot be run is worth nothing, and this one could not be run.
+Two separate pieces of work were being redone on every single bar:
+
+- `confirmed_swings` rescanned history to find fractal swings — 9.9 of 12.1
+  seconds in the signal path.
+- `resample(bars[:upto + 1], 15)` rebuilt every higher-timeframe bar from the
+  start of the file to check MM-006 — 25.4 of 28.7 seconds once the first was
+  fixed.
+
+Both are quadratic. Measured at 500/1000/2000 bars the curve was unmistakable,
+and a two-year 1-minute file (~750,000 bars) extrapolated to roughly **140
+hours**.
+
+`SwingIndex` scans the series once and answers each query with two bisects, and
+carries the higher-timeframe resample alongside, aggregating each bucket once
+rather than once per signal. Only the bucket currently forming is rebuilt. The
+same object serves both drivers: a backtest hands it the whole series, and the
+live runner starts empty and calls `push` per bar, which is O(lookback) because
+a bar can only ever confirm the swing sitting `lookback` bars behind it.
+
+Measured after the change, on a random walk:
+
+| bars | seconds | µs/bar |
+| --- | --- | --- |
+| 40,000 | 2.99 | 74.7 |
+| 80,000 | 7.55 | 94.4 |
+| 160,000 | 15.74 | 98.4 |
+| 320,000 | 31.68 | 99.0 |
+
+Flat at ~99 µs/bar, so 750,000 bars is about **75 seconds**. The early creep is
+the window filling, not a hidden quadratic.
+
+**The speed is not the point — the equivalence is.** A faster backtest that
+quietly returns different trades is worse than a slow one, so
+`tests/test_structure_index.py` compares the indexed path against the original
+unbounded rescan rather than testing the index on its own: same swings at every
+bar, same higher-timeframe bars at every bar, and the same trades out of a full
+backtest. One test counts full scans rather than timing anything, so a
+reintroduced per-bar rescan fails immediately on a machine fast enough to hide
+it.
+
+One deliberate difference is recorded there: `confirmed_swings(..., window=N)`
+slices the series and rescans, so the first `lookback` bars of the slice can
+never qualify however much real history sits behind them. The index has no such
+edge and finds swings the windowed rescan misses. The index is the correct
+answer; the window was an approximation on the way to it.
 
 ## Unsourced parameters
 

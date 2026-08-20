@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .bars import Bar, Swing, confirmed_swings
+from .bars import Bar, Swing, SwingIndex, confirmed_swings
 
 
 @dataclass(frozen=True)
@@ -105,7 +105,8 @@ class MSS:
         return bool(self.targets)
 
 
-def detect_mss(bars: list[Bar], upto: int, lookback: int = 2) -> MSS | None:
+def detect_mss(bars: list[Bar], upto: int, lookback: int = 2,
+               index: SwingIndex | None = None) -> MSS | None:
     """SMC-001, applied literally:
 
       1. price sweeps a series of lows
@@ -114,7 +115,7 @@ def detect_mss(bars: list[Bar], upto: int, lookback: int = 2) -> MSS | None:
 
     Uses only swings confirmed at `upto`, so it is safe for bar-by-bar replay.
     """
-    swings = confirmed_swings(bars, upto, lookback)
+    swings = confirmed_swings(bars, upto, lookback, index=index)
     if len(swings) < 3:
         return None
 

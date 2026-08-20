@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import time
 
-from .bars import Bar, confirmed_swings, resample
+from .bars import Bar, SwingIndex, confirmed_swings, resample_tail
 from .sessions import NY
 
 
@@ -23,7 +23,8 @@ class FilterResult:
 
 def low_resistance(entry: float, target: float, direction: str,
                    bars: list[Bar], upto: int, lookback: int = 2,
-                   htf_minutes: int = 15) -> FilterResult:
+                   htf_minutes: int = 15,
+                   index: SwingIndex | None = None) -> FilterResult:
     """MM-006: no opposing liquidity between entry and objective.
 
     For a long, an intermediate swing HIGH between entry and target is
@@ -38,10 +39,13 @@ def low_resistance(entry: float, target: float, direction: str,
     `htf_minutes=0` to check on the execution timeframe instead.
     """
     if htf_minutes and htf_minutes > 1:
-        htf = resample(bars[:upto + 1], htf_minutes)
+        # The index carries the resample too, so finished higher-timeframe
+        # bars are aggregated once per run rather than once per signal.
+        htf = (index.htf(htf_minutes, upto) if index is not None
+               else resample_tail(bars, htf_minutes, upto))
         swings = confirmed_swings(htf, len(htf) - 1, lookback)
     else:
-        swings = confirmed_swings(bars, upto, lookback)
+        swings = confirmed_swings(bars, upto, lookback, index=index)
     if direction == "long":
         blockers = [s.price for s in swings
                     if s.kind == "high" and entry < s.price < target]

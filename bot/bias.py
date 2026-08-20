@@ -31,7 +31,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .bars import Bar, confirmed_swings
+from .bars import Bar, SwingIndex, confirmed_swings
 from .patterns import premium_discount
 
 # --- UNSOURCED parameters. Tune per instrument; record what you chose. -------
@@ -69,12 +69,13 @@ class BiasResult:
         return hi / lo if lo > 0 else float("inf") if hi > 0 else 1.0
 
 
-def _unswept(bars: list[Bar], upto: int, lookback: int) -> tuple[list[float], list[float]]:
+def _unswept(bars: list[Bar], upto: int, lookback: int,
+             index: SwingIndex | None = None) -> tuple[list[float], list[float]]:
     """Swing highs never traded through since, and swing lows likewise.
 
     A pool that has already been taken is spent -- it is no longer a draw.
     """
-    swings = confirmed_swings(bars, upto, lookback)
+    swings = confirmed_swings(bars, upto, lookback, index=index)
     highs, lows = [], []
     for s in swings:
         after = bars[s.index + 1:upto + 1]
@@ -103,13 +104,14 @@ def daily_bias(bars: list[Bar], upto: int, *,
                lookback: int = SWING_LOOKBACK,
                tolerance: float = CLUSTER_TOLERANCE,
                margin: float = DECISION_MARGIN,
-               min_pools: int = MIN_POOLS) -> BiasResult:
+               min_pools: int = MIN_POOLS,
+               index: SwingIndex | None = None) -> BiasResult:
     """Score unswept pools either side and return a bias, or None.
 
     Uses only bars up to `upto`, so it is safe inside a replay.
     """
     price = bars[upto].close
-    highs, lows = _unswept(bars, upto, lookback)
+    highs, lows = _unswept(bars, upto, lookback, index=index)
 
     ranges = [b.range for b in bars[max(0, upto - 20):upto + 1]]
     avg_range = (sum(ranges) / len(ranges)) if ranges else 1.0
