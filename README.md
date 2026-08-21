@@ -44,7 +44,8 @@ Colab notebook that runs on Google's machines instead:
 | Notebook | Does | Needs |
 | --- | --- | --- |
 | `notebooks/see_for_yourself.ipynb` | **Start here.** Proves the machinery is honest — finds no edge in random data, refuses a lucky result, accepts a real one | nothing |
-| `notebooks/gate1_colab.ipynb` | Discovery — which videos exist, filtered to the eight ICT topics | nothing |
+| `notebooks/gate1_colab.ipynb` | Discovery — which videos exist, filtered to the eight ICT topics |
+| `notebooks/get_data_colab.ipynb` | **Fetch 1-minute price data** — the web form is one day per download; this pulls a two-year range | nothing |
 | `notebooks/backtest_colab.ipynb` | Backtest one setup | your CSV |
 | `notebooks/validate_colab.ipynb` | Walk-forward validation — the one that can say no | your CSV |
 

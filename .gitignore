@@ -21,5 +21,8 @@ logs/*.jsonl
 # Raw transcripts and quarantine stay local: personal research, not redistribution.
 data/quarantine/
 
-# Price data: large, licensed, and yours to supply.
-data/bars/
+# Price data: large, licensed, and yours to supply. The README that explains
+# where to get it is not data, and ignoring the whole directory kept it out of
+# the repo entirely -- so ignore the contents and keep the guidance.
+data/bars/*
+!data/bars/README.md
