@@ -41,6 +41,48 @@ POINT_FACTOR = {
 }
 
 
+# A price that is out by 100x or 1000x is the failure this module is most
+# likely to have and least likely to show: the file is well-formed, the bar
+# count is right, and every number in it is wrong. These bands are deliberately
+# far wider than any plausible market move -- they are an order-of-magnitude
+# check, not a forecast, and they exist so the mistake is caught before forty
+# minutes are spent building a corrupt file.
+PLAUSIBLE = {
+    "EURUSD": (0.5, 2.0), "GBPUSD": (0.8, 2.5), "AUDUSD": (0.4, 1.2),
+    "NZDUSD": (0.4, 1.0), "USDCAD": (0.9, 2.0), "USDCHF": (0.6, 1.5),
+    "EURGBP": (0.5, 1.2), "EURCHF": (0.7, 1.8), "USDJPY": (50, 300),
+    "EURJPY": (60, 350), "GBPJPY": (70, 400), "AUDJPY": (40, 250),
+    "XAUUSD": (200, 10_000), "XAGUSD": (5, 200),
+}
+
+
+def looks_plausible(symbol: str, price: float) -> tuple[bool, str]:
+    """Is this price the right order of magnitude for this instrument?
+
+    Returns a verdict and a sentence explaining it, so a notebook can print
+    something useful rather than just refusing.
+    """
+    band = PLAUSIBLE.get(symbol.upper())
+    if band is None:
+        return True, (f"no plausible range recorded for {symbol.upper()}, so this "
+                      "was not checked -- eyeball the price yourself")
+    lo, hi = band
+    if lo <= price <= hi:
+        return True, f"{price:g} is a normal price for {symbol.upper()}"
+    factor = ""
+    for mult, name in ((100, "100x"), (1000, "1000x"),
+                       (0.01, "1/100th"), (0.001, "1/1000th")):
+        if lo <= price * (1 / mult) <= hi:
+            factor = f" -- it looks {name} too large"
+            break
+        if lo <= price * mult <= hi:
+            factor = f" -- it looks {name} of what it should be"
+            break
+    return False, (f"{price:g} is outside {lo:g}-{hi:g}, the normal range for "
+                   f"{symbol.upper()}{factor}. That points at the point-factor "
+                   "table, and every bar would be scaled the same way.")
+
+
 def point_factor(symbol: str) -> float:
     try:
         return POINT_FACTOR[symbol.upper()]

@@ -180,3 +180,52 @@ class TestCsvOutput:
         rows = ticks_to_minutes([Tick(HOUR, 1.1, 1.1002, 1.0, 1.0)])
         line = rows_to_csv(rows).splitlines()[1]
         assert "+00:00" in line
+
+
+class TestPlausibility:
+    """The order-of-magnitude guard.
+
+    A 100x scaling error produces a file that is well-formed, has the right
+    number of bars, and is wrong in every price. Nothing downstream can detect
+    it -- the backtest runs and reports confident numbers -- so it has to be
+    caught at the point of download.
+    """
+
+    def test_a_normal_price_passes(self):
+        from bot.dukascopy import looks_plausible
+        ok, _ = looks_plausible("EURUSD", 1.0948)
+        assert ok
+
+    def test_a_hundredfold_error_is_caught_and_named(self):
+        from bot.dukascopy import looks_plausible
+        ok, why = looks_plausible("EURUSD", 109.48)
+        assert not ok
+        assert "100x too large" in why
+
+    def test_a_thousandfold_error_is_caught(self):
+        from bot.dukascopy import looks_plausible
+        ok, why = looks_plausible("EURUSD", 1094.8)
+        assert not ok
+        assert "1000x too large" in why
+
+    def test_jpy_pairs_have_their_own_band(self):
+        from bot.dukascopy import looks_plausible
+        assert looks_plausible("USDJPY", 151.2)[0]
+        assert not looks_plausible("USDJPY", 1.512)[0]
+
+    def test_gold_is_not_judged_as_a_currency_pair(self):
+        from bot.dukascopy import looks_plausible
+        assert looks_plausible("XAUUSD", 2350.0)[0]
+
+    def test_an_unlisted_symbol_says_so_rather_than_failing(self):
+        """Refusing an unknown symbol would block instruments that are fine.
+        Saying it was not checked is honest and lets the operator look."""
+        from bot.dukascopy import looks_plausible
+        ok, why = looks_plausible("EURNOK", 11.4)
+        assert ok
+        assert "not checked" in why
+
+    def test_every_symbol_with_a_point_factor_has_a_band(self):
+        """Otherwise a symbol silently skips the check that matters most."""
+        from bot.dukascopy import PLAUSIBLE, POINT_FACTOR
+        assert set(POINT_FACTOR) == set(PLAUSIBLE)
